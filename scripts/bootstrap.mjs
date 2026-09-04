@@ -20,4 +20,4 @@ text=text.replace('AGENT_API_TOKEN="replace-with-random-agent-token"',`AGENT_API
 writeFileSync(target,text,{mode:0o600});
 console.log("Created .env.local with one fixed local retailer account and randomized server secrets.");
 console.log(`Retailer login: ${email} / ${password}`);
-console.log("Add Razorpay Test Mode and OpenRouter credentials before the live demo.");
+console.log("Account-free demo payments are ready. Add OpenRouter only if you want real invoice extraction.");

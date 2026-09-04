@@ -67,6 +67,7 @@ export function publicApiError(error: unknown, fallback: string): string {
     UNAUTHORIZED: "Sign in again to continue.",
     RAZORPAY_NOT_CONFIGURED: "Razorpay Test Mode is not configured.",
     RAZORPAY_TEST_MODE_REQUIRED: "Only Razorpay Test Mode is allowed in this build.",
+    EXTERNAL_PAYMENT_DISABLED: "External payments are disabled in this public demo.",
     OPENROUTER_NOT_CONFIGURED: "Invoice AI is not configured.",
     PROCUREMENT_PRODUCT_NOT_SUPPORTED: "That product is not in the connected demo catalog yet.",
     PROCUREMENT_RUN_NOT_READY: "The procurement plan is no longer available. Compare again.",

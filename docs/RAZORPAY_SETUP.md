@@ -1,15 +1,18 @@
 # Razorpay Test-Mode Setup
 
-1. Create Razorpay Test Mode API keys.
-2. Put `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` in `.env.local`.
-3. Create a webhook secret and put it in `RAZORPAY_WEBHOOK_SECRET`.
-4. If using a tunnel/deployment, set `APP_ORIGIN` to the exact public origin.
-5. Configure webhook URL:
+> Optional private/local integration only. The public application defaults to `PAYMENT_MODE=demo`, uses dummy payments, and does not contact Razorpay.
+
+1. Set `PAYMENT_MODE=razorpay_test` intentionally.
+2. Create Razorpay Test Mode API keys. Live keys are rejected.
+3. Put `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` in `.env.local`.
+4. Create a webhook secret and put it in `RAZORPAY_WEBHOOK_SECRET`.
+5. If using a tunnel/deployment, set `APP_ORIGIN` to the exact public origin.
+6. Configure webhook URL:
 
    `https://YOUR_PUBLIC_HOST/api/webhooks/razorpay`
 
-6. Subscribe at minimum to `payment.captured`, `payment.failed`, and `order.paid`.
-7. Restart the server after editing environment variables.
+7. Subscribe at minimum to `payment.captured`, `payment.failed`, and `order.paid`.
+8. Restart the server after editing environment variables.
 
 ## Payment authority
 

@@ -36,7 +36,7 @@ export function SmartBuyClient(){
   const [busy,setBusy]=useState(false);
   const [paying,setPaying]=useState(false);
   const [error,setError]=useState("");
-  const [paid,setPaid]=useState<{paymentId:string;supplier:string}|null>(null);
+  const [paid,setPaid]=useState<{paymentId:string;supplier:string;demo:boolean}|null>(null);
 
   const best=run?.recommended??null;
   const savePct=useMemo(()=>best&&run?.usualCostPaise?Math.max(0,(best.savingsVsUsualPaise/run.usualCostPaise)*100):0,[best,run]);
@@ -55,6 +55,11 @@ export function SmartBuyClient(){
     try{
       const r=await fetch("/api/procurement/checkout/start",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({runId:run.runId,text})});
       const j=await r.json();if(!r.ok)throw new Error(j.error||"Checkout could not start");
+      if(j.mode==="demo"){
+        setPaid({paymentId:String(j.paymentId||"demo-verified"),supplier:best.supplierName,demo:true});
+        setPaying(false);
+        return;
+      }
       await ensureCheckout();
       if(!window.Razorpay)throw new Error("Razorpay Checkout is unavailable.");
       const rz=new window.Razorpay({
@@ -64,7 +69,7 @@ export function SmartBuyClient(){
           try{
             const vr=await fetch("/api/procurement/checkout/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...response,authorization_token:j.authorizationToken})});
             const vj=await vr.json();if(!vr.ok)throw new Error(vj.error||"Payment verification failed");
-            setPaid({paymentId:String(response.razorpay_payment_id||"verified"),supplier:best.supplierName});
+            setPaid({paymentId:String(response.razorpay_payment_id||"verified"),supplier:best.supplierName,demo:false});
           }catch(e){setError(e instanceof Error?e.message:"Payment verification failed");}
           finally{setPaying(false);}
         },
@@ -90,7 +95,7 @@ export function SmartBuyClient(){
     </section>}
 
     {error&&<div className="rp-callout danger"><CircleAlert size={20}/><div><strong>Action stopped safely</strong><span>{error}</span></div></div>}
-    {paid&&<div className="rp-callout success"><CheckCircle2 size={22}/><div><strong>Purchase verified</strong><span>Razorpay confirmed the payment to {paid.supplier}. Inventory is committed.</span></div><a href="/audit" className="rp-btn ghost">View audit <ArrowRight size={17}/></a></div>}
+    {paid&&<div className="rp-callout success"><CheckCircle2 size={22}/><div><strong>{paid.demo?"Demo purchase completed":"Purchase verified"}</strong><span>{paid.demo?`Dummy payment completed for ${paid.supplier}. No external account was contacted; inventory is committed.`:`Razorpay confirmed the Test Mode payment to ${paid.supplier}. Inventory is committed.`}</span></div><a href="/audit" className="rp-btn ghost">View audit <ArrowRight size={17}/></a></div>}
 
     {run&&<div className="rp-buy-layout">
       <section className="rp-plan-panel">
@@ -117,8 +122,8 @@ export function SmartBuyClient(){
             <div className={best.checks.inventory==="PASS"?"pass":"fail"}><PackageCheck/><span>Inventory</span><strong>{best.checks.inventory}</strong></div>
             <div className={best.checks.gstInvoice==="PASS"?"pass":"fail"}><ReceiptText/><span>GST invoice</span><strong>{best.checks.gstInvoice}</strong></div>
           </div>
-          <button className={`rp-pay-button ${best.policyResult!=="ALLOW"?"disabled":""}`} onClick={checkout} disabled={paying||best.policyResult!=="ALLOW"}>{paying?<Loader2 className="spin" size={20}/>:<CreditCard size={20}/>} {best.policyResult==="ALLOW"?`Approve & Pay ${inr(best.grossPayablePaise)}`:best.policyResult==="APPROVAL_REQUIRED"?"Manual approval required":"No safe purchase"}</button>
-          <div className="rp-payment-note"><ShieldCheck size={15}/> Server-created Razorpay order · Test Mode · amount cannot be changed in browser</div>
+          <button className={`rp-pay-button ${best.policyResult!=="ALLOW"?"disabled":""}`} onClick={checkout} disabled={paying||best.policyResult!=="ALLOW"}>{paying?<Loader2 className="spin" size={20}/>:<CreditCard size={20}/>} {best.policyResult==="ALLOW"?`Approve demo purchase · ${inr(best.grossPayablePaise)}`:best.policyResult==="APPROVAL_REQUIRED"?"Manual approval required":"No safe purchase"}</button>
+          <div className="rp-payment-note"><ShieldCheck size={15}/> Safe simulator · dummy payment only · no external account connected</div>
         </>:<div className="rp-no-plan"><CircleAlert/><strong>No safe option found</strong><span>Change the budget, deadline or supplier requirements.</span></div>}
       </aside>
     </div>}

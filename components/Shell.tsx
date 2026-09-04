@@ -30,7 +30,7 @@ export function Shell({children}:{children:React.ReactNode}){
       <button className="rp-signout" onClick={logout}><LogOut size={18}/> Sign out</button>
     </aside>
     <main className="rp-main">
-      <header className="rp-topbar"><div><span>{current.label}</span><strong>{current.hint}</strong></div><div className="rp-top-actions"><span className="rp-status live"><i/> AI Ready</span><span className="rp-status"><CreditCard size={16}/> Razorpay Test</span><button onClick={()=>setSetupOpen(true)} className="rp-profile">AR</button></div></header>
+      <header className="rp-topbar"><div><span>{current.label}</span><strong>{current.hint}</strong></div><div className="rp-top-actions"><span className="rp-status live"><i/> AI Ready</span><span className="rp-status"><CreditCard size={16}/> Demo Payments</span><button onClick={()=>setSetupOpen(true)} className="rp-profile">AR</button></div></header>
       <div className="rp-system-strip"><span><Store/> {current.label}</span><i/><span><PackageSearch/> Connected suppliers</span><i/><span><ShieldCheck/> Server authority active</span></div>
       <div className="rp-content">{children}</div>
     </main>

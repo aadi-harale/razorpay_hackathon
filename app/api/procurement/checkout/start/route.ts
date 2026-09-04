@@ -3,11 +3,12 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { requireApiSession } from "@/lib/auth";
 import { enforceSameOrigin, publicApiError, signServerState } from "@/lib/security";
-import { createProcurementRun, getProcurementRun, releaseSupplierReservation, reserveSupplierForRun } from "@/lib/procurement";
+import { commitSupplierReservation, createProcurementRun, getProcurementRun, releaseSupplierReservation, reserveSupplierForRun } from "@/lib/procurement";
 import { db } from "@/lib/db";
 import { razorpayClient } from "@/lib/razorpay";
 import { audit } from "@/lib/audit";
 import { PROCUREMENT } from "@/lib/procurementConfig";
+import { demoPaymentsEnabled } from "@/lib/config";
 
 export const runtime="nodejs";
 const schema=z.object({runId:z.string().min(8).max(120),text:z.string().min(3).max(1200).optional()});
@@ -36,6 +37,21 @@ export async function POST(request:Request){
     const orderId=`pord_${randomUUID()}`; localOrderId=orderId;
     const now=new Date().toISOString();
     db.prepare(`INSERT INTO procurement_orders(id,merchant_id,run_id,reservation_id,expected_amount_paise,currency,status,created_at,updated_at) VALUES(?,?,?,?,?,?, 'CREATING',?,?)`).run(orderId,session.merchantId,runId,reservation.id,loaded.selected.grossPayablePaise,PROCUREMENT.currency,now,now);
+    if(demoPaymentsEnabled()){
+      const demoOrderId=`demo_order_${randomUUID()}`;
+      const demoPaymentId=`demo_pay_${randomUUID()}`;
+      const committed=commitSupplierReservation(reservation.id);
+      const status=committed?"PAID":"RECONCILIATION_REQUIRED";
+      const completedAt=new Date().toISOString();
+      db.prepare(`UPDATE procurement_orders SET razorpay_order_id=?,razorpay_payment_id=?,status=?,updated_at=? WHERE id=?`).run(demoOrderId,demoPaymentId,status,completedAt,orderId);
+      db.prepare(`UPDATE procurement_runs SET status=? WHERE id=?`).run(status,runId);
+      if(committed){
+        db.prepare(`INSERT OR IGNORE INTO retailer_purchase_lines(id,merchant_id,source,supplier_name,purchased_at,product_key,product_name,brand,pack,quantity,gross_line_paise,gst_rate,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+          .run(`paid_${demoPaymentId}`,session.merchantId,'DEMO_PAYMENT_SIMULATOR',loaded.selected.supplierName,new Date().toISOString().slice(0,10),String(loaded.run.product_key),loaded.selected.listingTitle,'','',Number(loaded.run.cases),loaded.selected.grossPayablePaise,'0',completedAt);
+      }
+      audit({eventType:committed?"PROCUREMENT_DEMO_PAYMENT_CONFIRMED":"PROCUREMENT_RECONCILIATION_REQUIRED",actor:"DEMO_PAYMENT_SIMULATOR",severity:committed?"SUCCESS":"WARN",detail:committed?"Dummy payment completed locally, committed supplier inventory, and updated purchase memory. No external payment provider or account was contacted.":"Dummy payment completed but supplier inventory requires reconciliation. No external payment provider or account was contacted.",metadata:{runId,procurementOrderId:orderId,demoOrderId,demoPaymentId,amountPaise:loaded.selected.grossPayablePaise,supplierName:loaded.selected.supplierName,externalNetworkCall:false}});
+      return NextResponse.json({mode:"demo",ok:true,status,paymentId:demoPaymentId,orderId:demoOrderId,amount:loaded.selected.grossPayablePaise,currency:PROCUREMENT.currency,procurementOrderId:orderId,supplierName:loaded.selected.supplierName});
+    }
     const client=razorpayClient();
     const rp=await client.orders.create({amount:loaded.selected.grossPayablePaise,currency:PROCUREMENT.currency,receipt:orderId,notes:{procurement_run:runId,supplier:loaded.selected.supplierName}}) as unknown as {id:string};
     const update=db.prepare(`UPDATE procurement_orders SET razorpay_order_id=?,status='ORDER_CREATED',updated_at=? WHERE id=? AND razorpay_order_id IS NULL`).run(String(rp.id),new Date().toISOString(),orderId);

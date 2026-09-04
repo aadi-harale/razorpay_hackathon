@@ -5,6 +5,7 @@ import { verifyWebhookSignature } from "@/lib/razorpay";
 import { commitReservation } from "@/lib/inventory";
 import { audit } from "@/lib/audit";
 import { commitSupplierReservation, getProcurementRun } from "@/lib/procurement";
+import { demoPaymentsEnabled } from "@/lib/config";
 
 export const runtime = "nodejs";
 
@@ -79,6 +80,7 @@ function reconcileProcurementCaptured(payload: WebhookPayload) {
   return true;
 }
 export async function POST(request: Request) {
+  if (demoPaymentsEnabled()) return NextResponse.json({ error: "External payment webhooks are disabled in demo mode." }, { status: 410 });
   const rawBody = await request.text();
   const signature = request.headers.get("x-razorpay-signature");
   const eventId = request.headers.get("x-razorpay-event-id");

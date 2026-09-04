@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { verifyCheckoutSignature, razorpayClient } from "@/lib/razorpay";
 import { commitSupplierReservation, getProcurementRun } from "@/lib/procurement";
 import { audit } from "@/lib/audit";
+import { demoPaymentsEnabled } from "@/lib/config";
 
 export const runtime="nodejs";
 const schema=z.object({razorpay_payment_id:z.string().min(5).max(120),razorpay_order_id:z.string().min(5).max(120),razorpay_signature:z.string().regex(/^[a-f0-9]+$/i).max(256),authorization_token:z.string().max(5000).optional()});
@@ -14,6 +15,7 @@ type PaymentAuth={kind:string;merchantId:string;razorpayOrderId:string;expectedA
 export async function POST(request:Request){
   try{
     enforceSameOrigin(request);
+    if(demoPaymentsEnabled())return NextResponse.json({error:"External payment verification is disabled in demo mode."},{status:410});
     const session=await requireApiSession();
     const body=schema.safeParse(await request.json());
     if(!body.success)return NextResponse.json({error:"Invalid payment verification payload."},{status:400});

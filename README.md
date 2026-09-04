@@ -7,14 +7,20 @@
 </p>
 
 <p align="center">
+  <a href="https://razorpay-hackathon-phi.vercel.app/"><img alt="Open live demo" src="https://img.shields.io/badge/%E2%97%89_OPEN_LIVE_DEMO-razorpay--hackathon--phi.vercel.app-32D583?style=for-the-badge&labelColor=0B1020" /></a>
+</p>
+
+<p align="center">
   <a href="#-five-minute-demo"><img alt="Demo ready" src="https://img.shields.io/badge/DEMO-READY-32D583?style=for-the-badge" /></a>
   <a href="#-the-trust-model"><img alt="ShadowFunnel protected" src="https://img.shields.io/badge/SHADOWFUNNEL-PROTECTED-7C6CFF?style=for-the-badge" /></a>
-  <a href="#-validation"><img alt="40 tests passing" src="https://img.shields.io/badge/TESTS-40_PASSING-20B2AA?style=for-the-badge" /></a>
+  <img alt="Account free payments" src="https://img.shields.io/badge/PAYMENTS-DUMMY_ONLY-18B6A4?style=for-the-badge" />
+  <a href="#-validation"><img alt="41 tests passing" src="https://img.shields.io/badge/TESTS-41_PASSING-20B2AA?style=for-the-badge" /></a>
   <a href="./LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/LICENSE-MIT-5B6CFF?style=for-the-badge" /></a>
 </p>
 
 <p align="center">
   <a href="#-quick-start">Quick start</a> ·
+  <a href="https://razorpay-hackathon-phi.vercel.app/">Live application</a> ·
   <a href="#-five-minute-demo">Demo script</a> ·
   <a href="#-how-it-works">Architecture</a> ·
   <a href="./docs/API.md">Agent API</a> ·
@@ -23,11 +29,25 @@
 
 ---
 
+<table>
+  <tr>
+    <td width="65%">
+      <h3>🚀 Try it live</h3>
+      <p>Explore the complete retailer workflow—from invoice memory to supplier comparison, policy gates, inventory races, savings replay, and audit.</p>
+      <p><a href="https://razorpay-hackathon-phi.vercel.app/"><strong>Launch RazorProcure →</strong></a></p>
+    </td>
+    <td width="35%">
+      <h3>🛡️ Zero account risk</h3>
+      <p>The public deployment uses dummy payment data. It does not load Razorpay Checkout, call Razorpay APIs, or require a linked payment account.</p>
+    </td>
+  </tr>
+</table>
+
 ## The idea
 
 Small retailers repeat the same buying work every week: read invoices, remember what is running low, compare fragmented supplier quotes, check GST and delivery constraints, then make a payment they hope is correct.
 
-**RazorProcure turns that manual loop into a safe, explainable procurement agent.** It converts invoices into purchase memory, predicts replenishment, ranks connected suppliers by true landed cost, enforces merchant policy and inventory atomically, and creates a Razorpay order only when every gate passes.
+**RazorProcure turns that manual loop into a safe, explainable procurement agent.** It converts invoices into purchase memory, predicts replenishment, ranks connected suppliers by true landed cost, enforces merchant policy and inventory atomically, and completes a risk-free simulated purchase only when every gate passes.
 
 > **The AI may recommend. It may never authorize money.** Price, policy, stock, evidence, reservation, and payment verification remain server-owned and deterministic.
 
@@ -40,7 +60,7 @@ Small retailers repeat the same buying work every week: read invoices, remember 
 | **Smart Buy** | Best connected supplier and savings | Item price + tax + delivery, not a misleading sticker price |
 | **ShadowFunnel** | A clear pass/block reason before checkout | Budget, GST, delivery, inventory, evidence, and spend gates |
 | **Atomic inventory** | One request wins; overselling is blocked | Transactional reservation with race-safe state transitions |
-| **Razorpay checkout** | Familiar Test Mode payment flow | Server-created order, HMAC signature, API status, amount and currency verification |
+| **Account-free payment demo** | One-click simulated purchase | Server-owned amount, deterministic completion, zero external account access |
 | **Replay proof** | Baseline vs guarded outcome | Reproducible paired runs across 50 purchase intents |
 | **Audit trail** | Every decision in one place | Append-only events connecting intent, gate, order, payment, and outcome |
 
@@ -54,8 +74,8 @@ flowchart LR
     D --> E{ShadowFunnel}
     E -->|Blocked| F[Explain + Audit]
     E -->|Approved| G[Atomic Reservation]
-    G --> H[Razorpay Order]
-    H --> I[Verified Payment]
+    G --> H[Dummy Payment]
+    H --> I[Verified Demo Result]
     I --> J[Commit Inventory]
     J --> B
     J --> F
@@ -76,7 +96,7 @@ Start at `http://localhost:3100`, sign in, and follow this exact path:
 | **4:05** | **Savings Insights → Run paired replay** | “The same 50 intents run through baseline and guarded paths, making the safety and savings claim reproducible.” |
 | **4:40** | **Audit** | “Every recommendation, block, reservation, checkout, and outcome is explainable after the fact.” |
 
-If you want to show payment, return to **Safety Demo**, run the full demo, and continue into **Razorpay Test Mode**. No real money is charged.
+To show payment safely, return to **Safety Demo**, run the full demo, and click **Simulate payment**. The server completes the dummy transaction, commits the reservation, and writes the audit event without contacting an external provider.
 
 ## 🧠 The trust model
 
@@ -109,7 +129,8 @@ The **ShadowFunnel** kernel is the boundary between probabilistic suggestions an
 - Model output is treated as untrusted data and schema-validated.
 - Supplier eligibility, GST, delivery, budget, evidence, and spend limits are recalculated server-side.
 - Inventory is reserved transactionally before checkout and committed only after verified payment.
-- Checkout verification checks the Razorpay signature **and** fetches authoritative order/payment state.
+- Public demo payments are completed internally with explicit `externalNetworkCall: false` audit evidence.
+- External Razorpay Test Mode is fail-closed and available only through an intentional private `PAYMENT_MODE=razorpay_test` opt-in.
 - Same-origin controls, signed sessions, rate limits, CSP, and redacted errors protect the application surface.
 
 ## 🏗️ How it works
@@ -120,7 +141,8 @@ The **ShadowFunnel** kernel is the boundary between probabilistic suggestions an
 | **Procurement engine** | Normalization, deterministic landed cost, supplier ranking, policy evaluation |
 | **ShadowFunnel** | Preflight gates, reservations, replay, evidence verification, audit events |
 | **SQLite** | Local durable single-user state for sessions, inventory, purchases, orders, and audit |
-| **Razorpay** | Test Mode order creation and cryptographic checkout verification |
+| **Payment simulator** | Default account-free flow using dummy order/payment identifiers and no external network call |
+| **Razorpay adapter** | Optional, private Test Mode integration; disabled by default and never accepts live-mode keys |
 | **OpenRouter** | Optional extraction for merchant-uploaded invoices; never required for the bundled demo |
 
 Important code and design notes live in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md), [`docs/API.md`](./docs/API.md), and [`SECURITY.md`](./SECURITY.md).
@@ -130,7 +152,7 @@ Important code and design notes live in [`docs/ARCHITECTURE.md`](./docs/ARCHITEC
 ### Windows demo build
 
 1. Install **Node.js 22+**.
-2. Double-click **`configure.bat`** to create local secrets and optionally add Razorpay/OpenRouter credentials.
+2. Double-click **`configure.bat`** to create local authentication secrets and optionally add OpenRouter credentials.
 3. Double-click **`start.bat`**. It installs pinned dependencies, builds production, stops conflicting RazorProcure processes, and opens `http://localhost:3100`.
 4. Run **`show-login.bat`** to display the generated single-user credentials.
 5. Use **`stop.bat`** when finished; it stops only RazorProcure.
@@ -160,9 +182,14 @@ No credentials are committed. Local values belong in `.env.local`.
 | `AUTH_PASSWORD` | Single local merchant password | Generated locally |
 | `AUTH_SECRET` | Signs authenticated sessions | Generated locally |
 | `DATABASE_URL` | SQLite file location | Defaults to local `.data` storage |
-| `RAZORPAY_KEY_ID` | Razorpay Test Mode public key | Only for checkout |
-| `RAZORPAY_KEY_SECRET` | Razorpay Test Mode secret | Only for checkout |
+| `PAYMENT_MODE` | `demo` uses account-free dummy payments | Defaults to `demo` |
 | `OPENROUTER_API_KEY` | Real invoice extraction | Optional; demo invoice works offline |
+
+To clear any existing local payment credentials and lock the app back to dummy-payment mode:
+
+```bash
+npm run payments:disconnect
+```
 
 ## 🔌 Agent-ready API
 
@@ -189,7 +216,7 @@ The current verified baseline is:
 
 - TypeScript: clean
 - ESLint: clean
-- Vitest: **40/40 tests passing** across 13 test files
+- Vitest: **41/41 tests passing** across 13 test files
 - Next.js production build: successful
 - Dependency audit: **0 known vulnerabilities**
 - Secret scan: clean

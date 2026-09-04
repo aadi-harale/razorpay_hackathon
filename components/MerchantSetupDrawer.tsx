@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CheckCircle2, CircleAlert, Loader2, X } from "lucide-react";
 
-type Services={invoiceAI?:boolean;razorpay?:boolean;shadowFunnel?:boolean};
+type Services={invoiceAI?:boolean;razorpay?:boolean;demoPayments?:boolean;shadowFunnel?:boolean};
 type Overview={connectedSuppliers?:number;recurringProducts?:number;purchaseCount?:number};
 export function MerchantSetupDrawer({open,onClose}:{open:boolean;onClose:()=>void}){
   const [data,setData]=useState<{services:Services;overview:Overview}|null>(null);const [err,setErr]=useState("");
@@ -23,7 +23,7 @@ export function MerchantSetupDrawer({open,onClose}:{open:boolean;onClose:()=>voi
     {label:"Supplier network",ok:Boolean(data?.overview.connectedSuppliers),detail:`${data?.overview.connectedSuppliers??0} connected`},
     {label:"Invoice AI",ok:Boolean(data?.services.invoiceAI),detail:data?.services.invoiceAI?"OpenRouter connected":"Needs API key"},
     {label:"ShadowFunnel kernel",ok:Boolean(data?.services.shadowFunnel),detail:"Policy authority active"},
-    {label:"Razorpay Test Mode",ok:Boolean(data?.services.razorpay),detail:data?.services.razorpay?"Ready for checkout":"Needs test keys"},
+    {label:"Demo payment simulator",ok:Boolean(data?.services.demoPayments),detail:"Dummy data · no linked account"},
   ];
   const ready=rows.filter(r=>r.ok).length;
   return <div className="drawer-backdrop" onMouseDown={onClose}><aside className="rp-setup-drawer" onMouseDown={e=>e.stopPropagation()}>
@@ -32,7 +32,7 @@ export function MerchantSetupDrawer({open,onClose}:{open:boolean;onClose:()=>voi
     {err&&<div className="rp-inline-error">{err}</div>}
     {data&&<><div className="rp-ready-score"><div><strong>{ready}/{rows.length}</strong><span>systems ready</span></div><div><i style={{width:`${ready/rows.length*100}%`}}/></div></div>
       <div className="rp-ready-list">{rows.map(({label,ok,detail})=><div key={label} className={ok?"ok":"needs"}><span>{ok?<CheckCircle2/>:<CircleAlert/>}</span><div><strong>{label}</strong><small>{detail}</small></div></div>)}</div>
-      <div className="rp-drawer-next"><span>NEXT STEP</span><strong>{data.services.razorpay&&data.services.invoiceAI?"Run a Smart Buy":"Finish the incomplete connection"}</strong><Link href="/live-buyer" onClick={onClose}>Open Smart Buy</Link></div>
+      <div className="rp-drawer-next"><span>NEXT STEP</span><strong>{data.services.demoPayments?"Run a risk-free Smart Buy":"Demo simulator unavailable"}</strong><Link href="/live-buyer" onClick={onClose}>Open Smart Buy</Link></div>
     </>}
   </aside></div>;
 }

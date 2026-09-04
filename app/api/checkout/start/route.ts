@@ -3,12 +3,13 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { requireApiSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { DEMO } from "@/lib/config";
+import { DEMO, demoPaymentsEnabled } from "@/lib/config";
 import { enforceSameOrigin } from "@/lib/security";
 import { razorpayClient } from "@/lib/razorpay";
 import { audit } from "@/lib/audit";
 import { currentGstCapability, loadDemoFscCertificate } from "@/lib/engines/evidence";
 import { hashOffer } from "@/lib/offers";
+import { commitReservation } from "@/lib/inventory";
 
 const schema = z.object({ offerId: z.string().min(5).max(120) });
 
@@ -89,6 +90,22 @@ export async function POST(request: Request) {
     if (claim.kind === "IN_PROGRESS") return NextResponse.json({ error: "Checkout order creation is already in progress. Retry shortly; no second Razorpay order will be created." }, { status: 409 });
 
     try {
+      if (demoPaymentsEnabled()) {
+        const demoOrderId = `demo_order_${randomUUID()}`;
+        const demoPaymentId = `demo_pay_${randomUUID()}`;
+        const committed = commitReservation(policy.reservation_id);
+        const status = committed ? "PAID" : "PAID_REQUIRES_RECONCILIATION";
+        const now = new Date().toISOString();
+        db.prepare(`UPDATE commerce_orders SET razorpay_order_id=?, razorpay_payment_id=?, status=?, updated_at=? WHERE id=? AND status='CREATING'`)
+          .run(demoOrderId, demoPaymentId, status, now, claim.id);
+        if (committed) {
+          db.prepare("UPDATE offers SET status='PAID' WHERE id=?").run(offer.id);
+          db.prepare("UPDATE buyer_intents SET state='PAID', lifecycle='RECOVERED_AND_PAID' WHERE id=?").run(offer.intent_id);
+        }
+        audit({ intentId: offer.intent_id, offerId: offer.id, eventType: "DEMO_PAYMENT_CONFIRMED", actor: "DEMO_PAYMENT_SIMULATOR", severity: committed ? "SUCCESS" : "WARN", detail: committed ? "Dummy payment completed locally and committed the reserved inventory. No external payment provider or account was contacted." : "Dummy payment completed, but the reservation requires reconciliation. No external payment provider or account was contacted.", metadata: { demoOrderId, demoPaymentId, commerceOrderId: claim.id, amountPaise: offer.gross_amount_paise, currency: offer.currency, externalNetworkCall: false } });
+        return NextResponse.json({ mode: "demo", ok: true, status, paymentId: demoPaymentId, orderId: demoOrderId, amount: offer.gross_amount_paise, currency: offer.currency, commerceOrderId: claim.id });
+      }
+
       const client = razorpayClient();
       const rpOrder = await client.orders.create({
         amount: offer.gross_amount_paise,

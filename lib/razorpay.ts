@@ -1,7 +1,9 @@
 import Razorpay from "razorpay";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { paymentMode } from "@/lib/config";
 
 export function razorpayClient() {
+  if (paymentMode() !== "razorpay_test") throw new Error("EXTERNAL_PAYMENT_DISABLED");
   const keyId = process.env.RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
   if (!keyId || !keySecret) throw new Error("RAZORPAY_NOT_CONFIGURED");

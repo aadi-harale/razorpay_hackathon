@@ -19,8 +19,7 @@ if not exist .env.local (
   if errorlevel 1 goto :fail
 )
 
-powershell -NoProfile -Command "$line=(Get-Content '.env.local' | Where-Object { $_ -match '^RAZORPAY_KEY_ID=' } | Select-Object -First 1); if ($line -match 'rzp_test_') { exit 0 } else { exit 1 }"
-if errorlevel 1 echo [RazorProcure] WARNING: Razorpay Test Mode keys are not configured. Checkout will fail closed.
+echo [RazorProcure] Payment mode: account-free demo simulator. No external payment account is contacted.
 powershell -NoProfile -Command "$line=(Get-Content '.env.local' | Where-Object { $_ -match '^OPENROUTER_API_KEY=' } | Select-Object -First 1); if ($line -match 'sk-') { exit 0 } else { exit 1 }"
 if errorlevel 1 echo [RazorProcure] WARNING: OpenRouter key is not configured. Invoice AI will be unavailable.
 
@@ -70,7 +69,7 @@ if errorlevel 1 (
 start "" http://localhost:3100
 echo.
 echo [RazorProcure] READY
- echo   Fresh RazorProcure build verified. UI + APIs + ShadowFunnel kernel + Razorpay are online.
+ echo   Fresh RazorProcure build verified. UI + APIs + ShadowFunnel + safe demo payments are online.
 echo.
 exit /b 0
 

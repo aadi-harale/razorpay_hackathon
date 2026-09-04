@@ -1,18 +1,19 @@
 import type { NextConfig } from "next";
 
 const isProd = process.env.NODE_ENV === "production";
+const externalPaymentsEnabled = process.env.PAYMENT_MODE === "razorpay_test";
 
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"} https://checkout.razorpay.com https://*.razorpay.com`,
+  `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}${externalPaymentsEnabled ? " https://checkout.razorpay.com https://*.razorpay.com" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.razorpay.com",
-  "frame-src https://*.razorpay.com",
+  `connect-src 'self'${externalPaymentsEnabled ? " https://*.razorpay.com" : ""}`,
+  `frame-src${externalPaymentsEnabled ? " https://*.razorpay.com" : " 'none'"}`,
   "object-src 'none'",
   "base-uri 'self'",
-  "form-action 'self' https://*.razorpay.com",
+  `form-action 'self'${externalPaymentsEnabled ? " https://*.razorpay.com" : ""}`,
   "frame-ancestors 'none'"
 ].join("; ");
 

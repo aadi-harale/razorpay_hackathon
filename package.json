@@ -16,7 +16,8 @@
     "verify": "npm run secret-scan && npm run typecheck && npm run lint && npm run test && npm run build && npm audit --audit-level=high",
     "secret-scan": "node scripts/secret-scan.mjs",
     "auth:sync": "node scripts/ensure-local-auth.mjs",
-    "auth:reset": "node scripts/ensure-local-auth.mjs --rotate-password --unlock"
+    "auth:reset": "node scripts/ensure-local-auth.mjs --rotate-password --unlock",
+    "payments:disconnect": "node scripts/disable-external-payments.mjs"
   },
   "dependencies": {
     "better-sqlite3": "13.0.3",

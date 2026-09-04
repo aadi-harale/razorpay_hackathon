@@ -60,6 +60,14 @@ export function gatewayFeeGstRecoverable() {
   return (process.env.DEMO_GATEWAY_GST_RECOVERABLE ?? "true").toLowerCase() === "true";
 }
 
+export function paymentMode(): "demo" | "razorpay_test" {
+  return process.env.PAYMENT_MODE === "razorpay_test" ? "razorpay_test" : "demo";
+}
+
+export function demoPaymentsEnabled() {
+  return paymentMode() === "demo";
+}
+
 export function razorpayConfigured() {
-  return Boolean(process.env.RAZORPAY_KEY_ID?.startsWith("rzp_test_") && process.env.RAZORPAY_KEY_SECRET);
+  return paymentMode() === "razorpay_test" && Boolean(process.env.RAZORPAY_KEY_ID?.startsWith("rzp_test_") && process.env.RAZORPAY_KEY_SECRET);
 }

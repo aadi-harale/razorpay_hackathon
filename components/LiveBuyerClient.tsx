@@ -48,7 +48,7 @@ export function LiveBuyerClient() {
 
   const candidate = data?.candidates[selected];
   const selectedDecision = candidate?.policyResult === "ALLOW" ? "allow" : "block";
-  const paymentVerified = payment.includes("Captured");
+  const paymentVerified = payment.toLowerCase().includes("verified");
 
   async function runDemo() {
     setBusy(true); setError(""); setPayment("Not initiated"); setRace(null); setPreflight(null);
@@ -88,6 +88,10 @@ export function LiveBuyerClient() {
     try {
       const started=await fetch("/api/checkout/start",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({offerId:data.offerId})});
       const checkout=await started.json(); if(!started.ok)throw new Error(checkout.error||"Checkout unavailable");
+      if(checkout.mode==="demo"){
+        setPayment("Demo payment · verified");
+        return;
+      }
       const loaded=await loadRazorpay(); if(!loaded||!window.Razorpay)throw new Error("Razorpay Checkout script could not be loaded.");
       const rz=new window.Razorpay({
         key:checkout.keyId, amount:checkout.amount, currency:checkout.currency, order_id:checkout.orderId,
@@ -107,7 +111,7 @@ export function LiveBuyerClient() {
 
   return <>
     <div className="page-heading elevated-heading live-page-head">
-      <div><div className="eyebrow"><ShieldCheck size={14}/> Buyer operations</div><h1>Safety Demo</h1><p>Run the deterministic buyer walkthrough, inspect every decision, then use Razorpay Test Mode only when you choose to pay.</p></div>
+      <div><div className="eyebrow"><ShieldCheck size={14}/> Buyer operations</div><h1>Safety Demo</h1><p>Run the deterministic buyer walkthrough, inspect every decision, then complete a dummy payment without connecting any external account.</p></div>
       <div className="heading-actions"><button className="button secondary" onClick={resetFlow} disabled={busy}><RotateCcw size={16}/> Reset</button><button className="button secondary" onClick={runRace} disabled={busy || Boolean(data)}><Swords size={16}/> Inventory race</button><button className="button primary hero-button" onClick={runDemo} disabled={busy}>{busy?<Loader2 size={16} className="spin"/>:<Play size={16}/>}Run full demo</button></div>
     </div>
 
@@ -182,13 +186,13 @@ export function LiveBuyerClient() {
             <div className="money-table"><div className="money-row hero-money"><span>Buyer pays</span><strong>{inr(candidate.accounting.grossCustomerPayablePaise)}</strong></div><div className="money-row"><span>Net revenue</span><strong>{inr(candidate.accounting.netSalesRevenuePaise)}</strong></div><div className="money-row"><span>COGS</span><strong>{inr(candidate.accounting.economicCogsPaise)}</strong></div><div className="money-row"><span>Fulfilment</span><strong>{inr(candidate.accounting.fulfilmentCostPaise)}</strong></div><div className="money-row"><span>Processor</span><strong>{inr(candidate.accounting.processorCostPaise)}</strong></div><div className="money-row"><span>Contribution</span><strong>{inr(candidate.accounting.contributionPaise)}</strong></div><div className="money-row emphasis"><span>Margin</span><strong>{pct(candidate.accounting.contributionMargin)}</strong></div><div className="money-row"><span>Floor</span><strong>23.00%</strong></div></div>
             <div className={`decision-box ${selectedDecision}`}><div className="decision-title">{candidate.policyResult==="ALLOW"?<><Check size={15}/> Safe to offer</>:<><X size={15}/> Blocked</>}</div><p>{candidate.policyReason}</p></div>
           </>}
-          <div className="checkout-zone"><button className="button primary checkout-button" disabled={selected!=="edge"||paymentVerified} onClick={startCheckout}><CreditCard size={17}/>{paymentVerified?"Payment verified":"Pay with Razorpay"}</button><div className={`payment-state ${paymentVerified?"verified":""}`}>{paymentVerified?<ShieldCheck size={16}/>:<LockKeyhole size={16}/>}<div><span>PAYMENT</span><strong>{payment}</strong></div></div></div>
+          <div className="checkout-zone"><button className="button primary checkout-button" disabled={selected!=="edge"||paymentVerified} onClick={startCheckout}><CreditCard size={17}/>{paymentVerified?"Demo verified":"Simulate payment"}</button><div className={`payment-state ${paymentVerified?"verified":""}`}>{paymentVerified?<ShieldCheck size={16}/>:<LockKeyhole size={16}/>}<div><span>DEMO PAYMENT</span><strong>{payment}</strong></div></div></div>
         </aside>
       </div>
 
-      {paymentVerified && <section className="completion-banner"><div><ShieldCheck size={26}/><span>TRANSACTION COMPLETE</span><strong>Payment verified. Inventory committed. Audit ready.</strong></div><div><Link className="button secondary" href="/audit"><ClipboardCheck size={17}/>Open audit</Link><Link className="button primary" href="/funnel">View funnel <ArrowRight size={17}/></Link></div></section>}
+      {paymentVerified && <section className="completion-banner"><div><ShieldCheck size={26}/><span>DEMO TRANSACTION COMPLETE</span><strong>Dummy payment verified. Inventory committed. No external account contacted.</strong></div><div><Link className="button secondary" href="/audit"><ClipboardCheck size={17}/>Open audit</Link><Link className="button primary" href="/funnel">View funnel <ArrowRight size={17}/></Link></div></section>}
     </>}
 
-    <div className="secure-footnote"><AlertTriangle size={13}/> Missing or mismatched payment credentials fail closed. No fake success state.</div>
+    <div className="secure-footnote"><AlertTriangle size={13}/> Public demo mode uses dummy payments only. Razorpay Checkout and external payment APIs are not contacted.</div>
   </>;
 }

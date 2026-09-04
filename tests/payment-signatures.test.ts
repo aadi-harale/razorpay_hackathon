@@ -24,8 +24,16 @@ import { razorpayClient } from "@/lib/razorpay";
 
 describe("Razorpay environment gate", () => {
   it("refuses live-mode keys in the Buildathon application", () => {
+    process.env.PAYMENT_MODE = "razorpay_test";
     process.env.RAZORPAY_KEY_ID = "rzp_live_forbidden";
     process.env.RAZORPAY_KEY_SECRET = "secret";
     expect(() => razorpayClient()).toThrow("RAZORPAY_TEST_MODE_REQUIRED");
+    delete process.env.PAYMENT_MODE;
+  });
+  it("does not contact an external gateway in default demo mode", () => {
+    delete process.env.PAYMENT_MODE;
+    process.env.RAZORPAY_KEY_ID = "rzp_test_present_but_ignored";
+    process.env.RAZORPAY_KEY_SECRET = "secret";
+    expect(() => razorpayClient()).toThrow("EXTERNAL_PAYMENT_DISABLED");
   });
 });

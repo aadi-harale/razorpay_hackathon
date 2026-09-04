@@ -22,16 +22,16 @@ export function LoginForm({defaultEmail}:{defaultEmail:string}){
       <div className="login-copy">
         <div className="rp-kicker"><Sparkles size={16}/> RAZORPAY AI BUILDATHON · TRACK 01</div>
         <h1>Turn purchase history into a buying agent.</h1>
-        <p>Learn recurring inventory, compare verified suppliers, optimize landed cost and complete approved purchases through Razorpay.</p>
+        <p>Learn recurring inventory, compare verified suppliers, optimize landed cost and safely simulate approved purchases.</p>
         <div className="login-flow"><div><span>01</span><BrainCircuit size={18}/><strong>Learn</strong></div><i/><div><span>02</span><PackageSearch size={18}/><strong>Compare</strong></div><i/><div><span>03</span><ShieldCheck size={18}/><strong>Gate</strong></div><i/><div><span>04</span><CreditCard size={18}/><strong>Pay</strong></div></div>
-        <div className="login-trust-list"><span><Check size={14}/> Invoice intelligence</span><span><Check size={14}/> True landed cost</span><span><Check size={14}/> Atomic supplier inventory</span><span><Check size={14}/> Server-verified Razorpay payments</span></div>
+        <div className="login-trust-list"><span><Check size={14}/> Invoice intelligence</span><span><Check size={14}/> True landed cost</span><span><Check size={14}/> Atomic supplier inventory</span><span><Check size={14}/> Account-free demo payments</span></div>
       </div>
     </section>
     <section className="login-form-wrap"><div className="login-card">
       <div className="secure-access-label"><LockKeyhole size={15}/><span>SECURE RETAIL WORKSPACE</span></div>
-      <h2>Welcome back</h2><p>Use the credentials shown by <b>start.bat</b>. API keys and payment secrets stay server-side.</p>
+      <h2>Welcome back</h2><p>Use the configured demo credentials. This public workspace uses dummy data and never asks you to connect a payment account.</p>
       <form className="form" onSubmit={submit}><div className="field"><label>Retailer email</label><input autoComplete="username" type="email" value={email} onChange={e=>setEmail(e.target.value)} required/></div><div className="field"><label>Password</label><input autoComplete="current-password" type="password" value={password} onChange={e=>setPassword(e.target.value)} required/></div>{error&&<div className="error-text">{error}</div>}<button className="button primary login-button" disabled={busy}>{busy?"Signing in…":<>Enter RazorProcure <ArrowRight size={17}/></>}</button><div className="login-hint"><ShieldCheck size={15}/><div><strong>Protected merchant session</strong><span>Every purchase, supplier reservation and payment is checked server-side.</span></div></div></form>
-      <div className="login-razorpay"><span className="dot pulse-dot"/> Razorpay integration runs in Test Mode</div>
+      <div className="login-razorpay"><span className="dot pulse-dot"/> Safe demo mode · no external payment account connected</div>
     </div></section>
   </div>;
 }

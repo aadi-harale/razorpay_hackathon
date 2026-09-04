@@ -3,7 +3,7 @@
 ## What works
 The project is a standard Next.js App Router application and includes `vercel.json`. Add the repository to Vercel and configure the environment variables from `.env.example`. Do **not** upload `.env.local`.
 
-Required production variables: `DEMO_EMAIL`, `DEMO_PASSWORD` (16+ chars), `SESSION_SECRET` (32+ chars), `AGENT_API_TOKEN`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `NEXT_PUBLIC_RAZORPAY_KEY_ID`. Add `RAZORPAY_WEBHOOK_SECRET` when webhooks are enabled. Add `OPENROUTER_API_KEY` only for invoice extraction.
+Required production variables: `DEMO_EMAIL`, `DEMO_PASSWORD` (16+ chars), `SESSION_SECRET` (32+ chars), and `AGENT_API_TOKEN`. Set `PAYMENT_MODE=demo` for the public account-free simulator. Add `OPENROUTER_API_KEY` only for real invoice extraction; the bundled invoice demo does not need it.
 
 Set `APP_ORIGIN` to the final HTTPS deployment URL, e.g. `https://your-app.vercel.app`.
 
@@ -15,7 +15,10 @@ Vercel's project filesystem is read-only and `/tmp` is ephemeral. This release a
 2. Import it in Vercel.
 3. Add the environment variables in Project Settings -> Environment Variables.
 4. Deploy.
-5. Configure the Razorpay webhook URL as `https://YOUR_DOMAIN/api/webhooks/razorpay` and set the same webhook secret in Vercel.
+5. Confirm `/api/health` reports `paymentMode: "demo"` and `externalPaymentConnected: false`.
 
-## Stateless safety fallback
-The Vercel demo path uses signed server-state tokens for the merchant session and for Razorpay payment authorization. The token binds the Razorpay order ID, expected amount, currency, merchant, supplier context and expiry. The verification endpoint still verifies the Checkout HMAC and independently fetches Razorpay Payment/Order state before success. This makes the checkout demo resilient to function-instance changes without trusting browser-supplied money. Inventory/audit persistence remains ephemeral until an external database is configured.
+## Public payment safety
+The default demo path generates dummy order and payment identifiers on the server, commits only an already-authorized reservation, and records `externalNetworkCall: false` in the audit event. It does not load Razorpay Checkout, call Razorpay APIs, accept webhooks, or require payment credentials. Even if old Razorpay variables remain in Vercel, they are ignored unless `PAYMENT_MODE=razorpay_test` is explicitly selected. Inventory/audit persistence remains ephemeral until an external database is configured.
+
+## Optional private Test Mode
+The Razorpay adapter is retained for private/local integration testing only. Enabling it requires the explicit `PAYMENT_MODE=razorpay_test` setting plus Test Mode credentials. Live-mode key IDs are rejected. Do not enable this mode on a public shared demo unless you intentionally want the deployment to contact the Razorpay Test Mode API.

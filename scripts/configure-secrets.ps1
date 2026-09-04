@@ -13,11 +13,11 @@ function SetEnvLine([string]$name,[string]$value){
   Set-Content -Path $envFile -Value $out -Encoding UTF8
 }
 Write-Host "RazorProcure local secret configuration" -ForegroundColor Cyan
-$keyId=Read-Host "Razorpay Test Key ID (rzp_test_...)"
-$keySecret=ToPlain (Read-Host "Razorpay Test Key Secret" -AsSecureString)
-$webhook=ToPlain (Read-Host "Razorpay Webhook Secret (optional; Enter for blank)" -AsSecureString)
 $openrouter=ToPlain (Read-Host "OpenRouter API Key (optional; Enter for blank)" -AsSecureString)
-if($keyId){SetEnvLine "RAZORPAY_KEY_ID" $keyId; SetEnvLine "NEXT_PUBLIC_RAZORPAY_KEY_ID" $keyId}
-if($keySecret){SetEnvLine "RAZORPAY_KEY_SECRET" $keySecret}
-SetEnvLine "RAZORPAY_WEBHOOK_SECRET" $webhook
+SetEnvLine "PAYMENT_MODE" "demo"
+SetEnvLine "RAZORPAY_KEY_ID" ""
+SetEnvLine "RAZORPAY_KEY_SECRET" ""
+SetEnvLine "RAZORPAY_WEBHOOK_SECRET" ""
+SetEnvLine "NEXT_PUBLIC_RAZORPAY_KEY_ID" ""
 SetEnvLine "OPENROUTER_API_KEY" $openrouter
+Write-Host "External payment credentials cleared. Account-free demo payments are enabled." -ForegroundColor Green

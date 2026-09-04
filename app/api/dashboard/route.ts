@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireApiSession } from "@/lib/auth";
 import { replayDashboardData } from "@/lib/replay";
 import { inventorySnapshot } from "@/lib/inventory";
-import { razorpayConfigured, DEMO } from "@/lib/config";
+import { demoPaymentsEnabled, razorpayConfigured, DEMO } from "@/lib/config";
 import { db } from "@/lib/db";
 
 export async function GET() {
@@ -20,6 +20,7 @@ export async function GET() {
       catalogAndCosts: Number(products.n) > 0,
       inventory: Number(locations.n) >= 2,
       currentEvidence: Number(evidence.n) > 0,
+      demoPayments: demoPaymentsEnabled(),
       razorpay: razorpayConfigured(),
       agentApi: agentToken.length >= 24 && !agentToken.includes("replace-with")
     };

@@ -7,7 +7,7 @@ import { verifyCheckoutSignature, razorpayClient } from "@/lib/razorpay";
 import { commitReservation } from "@/lib/inventory";
 import { audit } from "@/lib/audit";
 import { calculateRealizedContribution } from "@/lib/engines/accounting";
-import { DEMO, gatewayFeeGstRecoverable } from "@/lib/config";
+import { DEMO, demoPaymentsEnabled, gatewayFeeGstRecoverable } from "@/lib/config";
 
 const schema = z.object({
   razorpay_payment_id: z.string().min(5).max(120),
@@ -22,6 +22,7 @@ type Policy = { reservation_id:string };
 export async function POST(request: Request) {
   try {
     enforceSameOrigin(request);
+    if (demoPaymentsEnabled()) return NextResponse.json({ error: "External payment verification is disabled in demo mode." }, { status: 410 });
     const session = await requireApiSession();
     const parsed = schema.safeParse(await request.json());
     if (!parsed.success) return NextResponse.json({ error: "Invalid payment verification payload." }, { status: 400 });
