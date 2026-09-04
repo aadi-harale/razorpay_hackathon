@@ -1,0 +1,35 @@
+<svg width="1400" height="520" viewBox="0 0 1400 520" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">RazorProcure</title>
+  <desc id="desc">AI procurement that earns the right to pay, protected by the ShadowFunnel safety kernel.</desc>
+  <defs>
+    <linearGradient id="bg" x1="40" y1="20" x2="1360" y2="500" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#080B1B"/><stop offset="0.48" stop-color="#111339"/><stop offset="1" stop-color="#071C24"/>
+    </linearGradient>
+    <linearGradient id="brand" x1="338" y1="105" x2="1018" y2="226" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A998FF"/><stop offset="0.52" stop-color="#7488FF"/><stop offset="1" stop-color="#37E1B2"/>
+    </linearGradient>
+    <linearGradient id="bolt" x1="61" y1="78" x2="144" y2="160" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A998FF"/><stop offset="1" stop-color="#37E1B2"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0" cy="0" r="1" gradientTransform="translate(260 118) rotate(33) scale(470 320)" gradientUnits="userSpaceOnUse"><stop stop-color="#755BFF" stop-opacity="0.34"/><stop offset="1" stop-color="#755BFF" stop-opacity="0"/></radialGradient>
+    <radialGradient id="glowB" cx="0" cy="0" r="1" gradientTransform="translate(1160 430) rotate(-145) scale(450 290)" gradientUnits="userSpaceOnUse"><stop stop-color="#25D9A2" stop-opacity="0.25"/><stop offset="1" stop-color="#25D9A2" stop-opacity="0"/></radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="12" stdDeviation="22" flood-color="#000000" flood-opacity="0.35"/></filter>
+  </defs>
+  <rect width="1400" height="520" rx="32" fill="url(#bg)"/><rect width="1400" height="520" rx="32" fill="url(#glowA)"/><rect width="1400" height="520" rx="32" fill="url(#glowB)"/>
+  <rect x="1" y="1" width="1398" height="518" rx="31" stroke="#FFFFFF" stroke-opacity="0.11" stroke-width="2"/>
+  <g opacity="0.18" stroke="#9F95FF"><path d="M0 85H194L236 127H360"/><path d="M1400 115H1240L1190 165H1060"/><path d="M0 438H160L202 396H315"/><path d="M1400 410H1282L1236 364H1120"/><circle cx="360" cy="127" r="4" fill="#A998FF"/><circle cx="1060" cy="165" r="4" fill="#37E1B2" stroke="#37E1B2"/><circle cx="315" cy="396" r="4" fill="#A998FF"/><circle cx="1120" cy="364" r="4" fill="#37E1B2" stroke="#37E1B2"/></g>
+  <g transform="translate(583 55)" filter="url(#shadow)"><rect width="72" height="72" rx="20" fill="#161A45" stroke="#8C7DFF" stroke-opacity="0.65"/><path d="M41.5 10L19 40H34L29.5 62L53 31H38L41.5 10Z" fill="url(#bolt)"/></g>
+  <text x="675" y="108" fill="#A9B0C7" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="19" font-weight="650" letter-spacing="4">AI PROCUREMENT FOR RETAILERS</text>
+  <text x="700" y="205" text-anchor="middle" fill="url(#brand)" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="84" font-weight="800" letter-spacing="-4">RazorProcure</text>
+  <text x="700" y="254" text-anchor="middle" fill="#E8E9F6" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="25" font-weight="500">AI that earns the right to pay.</text>
+  <text x="700" y="292" text-anchor="middle" fill="#929AB5" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="17">Learn demand  ·  Compare true cost  ·  Enforce policy  ·  Verify payment</text>
+  <g transform="translate(276 338)" font-family="Inter, Segoe UI, Arial, sans-serif">
+    <g><rect width="190" height="108" rx="18" fill="#151835" stroke="#8C7DFF" stroke-opacity="0.32"/><text x="22" y="34" fill="#8F83FF" font-size="13" font-weight="700" letter-spacing="2">01 · LEARN</text><text x="22" y="65" fill="#F1F2FA" font-size="19" font-weight="700">Purchase memory</text><text x="22" y="88" fill="#8F96AE" font-size="13">Invoice → intent</text></g>
+    <path d="M198 54H222M215 47L222 54L215 61" stroke="#636B91" stroke-width="2"/>
+    <g transform="translate(230)"><rect width="190" height="108" rx="18" fill="#151835" stroke="#788BFF" stroke-opacity="0.32"/><text x="22" y="34" fill="#7E8FFF" font-size="13" font-weight="700" letter-spacing="2">02 · COMPARE</text><text x="22" y="65" fill="#F1F2FA" font-size="19" font-weight="700">True landed cost</text><text x="22" y="88" fill="#8F96AE" font-size="13">Price + tax + delivery</text></g>
+    <path d="M428 54H452M445 47L452 54L445 61" stroke="#636B91" stroke-width="2"/>
+    <g transform="translate(460)"><rect width="190" height="108" rx="18" fill="#151835" stroke="#53BFC5" stroke-opacity="0.38"/><text x="22" y="34" fill="#51C9C5" font-size="13" font-weight="700" letter-spacing="2">03 · PROVE</text><text x="22" y="65" fill="#F1F2FA" font-size="19" font-weight="700">ShadowFunnel</text><text x="22" y="88" fill="#8F96AE" font-size="13">Deterministic gates</text></g>
+    <path d="M658 54H682M675 47L682 54L675 61" stroke="#636B91" stroke-width="2"/>
+    <g transform="translate(690)"><rect width="190" height="108" rx="18" fill="#121D31" stroke="#37E1B2" stroke-opacity="0.42"/><text x="22" y="34" fill="#37E1B2" font-size="13" font-weight="700" letter-spacing="2">04 · PAY</text><text x="22" y="65" fill="#F1F2FA" font-size="19" font-weight="700">Razorpay verified</text><text x="22" y="88" fill="#8F96AE" font-size="13">Reserve → verify → commit</text></g>
+  </g>
+</svg>
