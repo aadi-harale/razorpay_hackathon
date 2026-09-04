@@ -10,7 +10,7 @@ Set `APP_ORIGIN` to the final HTTPS deployment URL, e.g. `https://your-app.verce
 ## Durable Supabase state
 Vercel's writable `/tmp` directory is ephemeral, so production runtime restores a checksummed SQLite snapshot from Supabase Postgres before opening the database. Every audited state transition schedules a version-checked checkpoint back to Postgres; reset and login-throttle mutations checkpoint explicitly. This preserves the existing transactional SQLite safety kernel while making the single-user deployment survive cold starts.
 
-Run `npm run db:bootstrap:supabase` once locally after setting `POSTGRES_URL` to create the snapshot table and upload the verified starting state. `/api/health` must then report `storageMode: "supabase_durable_snapshot"` on Vercel.
+Run `npm run db:bootstrap:supabase` once locally after setting `POSTGRES_URL` to create the snapshot table and upload the verified starting state. On Vercel, use Supabase's transaction-pooler URL on port `6543`; its direct database hostname is IPv6-only on projects without the IPv4 add-on. `/api/health` must then report `storageMode: "supabase_durable_snapshot"`.
 
 This adapter is intentionally scoped to the single-user application. A future multi-tenant release should use row-native Postgres repositories rather than whole-workspace snapshots.
 

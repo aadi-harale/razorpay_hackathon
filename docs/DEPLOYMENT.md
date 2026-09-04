@@ -7,7 +7,7 @@ The supported public profile is account-free:
 1. Import the GitHub repository into Vercel.
 2. Use Node.js 22+ and the included `vercel.json`.
 3. Set strong `DEMO_EMAIL`, `DEMO_PASSWORD`, `SESSION_SECRET` and `AGENT_API_TOKEN` environment variables.
-4. Set `POSTGRES_URL` to the direct SSL connection string for the Supabase project, then run `npm run db:bootstrap:supabase` once from a trusted local checkout.
+4. Set `POSTGRES_URL` to the Supabase transaction-pooler SSL connection string (port `6543`) for Vercel. The direct connection may be used by the one-time local `npm run db:bootstrap:supabase` command on an IPv6-capable machine.
 5. Set `PAYMENT_MODE=demo`.
 6. Leave every `RAZORPAY_*` and `NEXT_PUBLIC_RAZORPAY_*` variable unset.
 7. Optionally set `LLM_PROVIDER`, `OPENROUTER_API_KEY` and `OPENROUTER_MODEL`; the bundled invoice demo remains deterministic without them.

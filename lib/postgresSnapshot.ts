@@ -8,7 +8,10 @@ export function postgresSnapshotConfigured(){return Boolean(process.env.POSTGRES
 
 function client(){
   if(!process.env.POSTGRES_URL)throw new Error("POSTGRES_URL_NOT_CONFIGURED");
-  globalStore.razorProcureSql??=postgres(process.env.POSTGRES_URL,{ssl:"require",max:1,idle_timeout:20,connect_timeout:10,prepare:true});
+  // Supabase's transaction-mode pooler is the IPv4-compatible endpoint for
+  // serverless runtimes. Prepared statements are intentionally disabled
+  // because transaction pooling cannot retain session-level statement state.
+  globalStore.razorProcureSql??=postgres(process.env.POSTGRES_URL,{ssl:"require",max:1,idle_timeout:20,connect_timeout:10,prepare:false});
   return globalStore.razorProcureSql;
 }
 
