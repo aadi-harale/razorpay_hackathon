@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, BadgeIndianRupee, Boxes, Check, CheckCircle2, CircleAlert, CreditCard, Loader2, PackageCheck, ReceiptText, Search, ShieldCheck, ShoppingCart, Sparkles, Store, Truck, X } from "lucide-react";
+import { ArrowRight, BadgeIndianRupee, Boxes, Check, CheckCircle2, CircleAlert, CreditCard, Loader2, PackageCheck, ReceiptText, Search, ShieldAlert, ShieldCheck, ShoppingCart, Sparkles, Store, Truck, X } from "lucide-react";
 
 type CheckState="PASS"|"FAIL"|"APPROVAL";
 type Option={
@@ -10,6 +10,7 @@ type Option={
 };
 type Run={runId:string;parsed:{productKey:string;productName:string;matchStatus:"EXACT"|"HIGH_CONFIDENCE";matchReason:string;cases:number;budgetPaise:number;deadlineDays:number;requiresGstInvoice:boolean};usualCostPaise:number;recommended:Option|null;options:Option[];authority:string};
 type Basket={lines:Array<{productKey:string;productName:string;cases:number;usualCostPaise:number;selected:Option}>;usualCostPaise:number;optimizedCostPaise:number;economicLandedPaise:number;savingsPaise:number;supplierAllocation:string[];policyResult:"ALLOW"|"APPROVAL_REQUIRED"};
+type ReceivingResult={status:"MATCHED"|"EXCEPTION_BLOCKED";checks:{purchaseOrder:"PASS";receipt:"PASS"|"FAIL";invoice:"PASS"|"FAIL"};quantityVarianceCases:number;invoiceVariancePaise:number;protectedValuePaise:number;exceptions:string[]};
 
 declare global { interface Window { Razorpay?: new(options:Record<string,unknown>)=>{open:()=>void}; } }
 
@@ -37,15 +38,16 @@ export function SmartBuyClient(){
   const [busy,setBusy]=useState(false);
   const [paying,setPaying]=useState(false);
   const [error,setError]=useState("");
-  const [paid,setPaid]=useState<{paymentId:string;supplier:string;demo:boolean}|null>(null);
+  const [paid,setPaid]=useState<{paymentId:string;supplier:string;demo:boolean;procurementOrderId:string;receiptToken:string}|null>(null);
   const [basket,setBasket]=useState<Basket|null>(null);
   const [basketBusy,setBasketBusy]=useState(false);
+  const [receiving,setReceiving]=useState(false);const [receivingResult,setReceivingResult]=useState<ReceivingResult|null>(null);
 
   const best=run?.recommended??null;
   const savePct=useMemo(()=>best&&run?.usualCostPaise?Math.max(0,(best.savingsVsUsualPaise/run.usualCostPaise)*100):0,[best,run]);
 
   async function compare(){
-    setBusy(true);setError("");setPaid(null);setRun(null);
+    setBusy(true);setError("");setPaid(null);setReceivingResult(null);setRun(null);
     try{
       const r=await fetch("/api/procurement/compare",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({text})});
       const j=await r.json();if(!r.ok)throw new Error(j.error||"Comparison failed");setRun(j);
@@ -59,7 +61,7 @@ export function SmartBuyClient(){
       const r=await fetch("/api/procurement/checkout/start",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({runId:run.runId,text})});
       const j=await r.json();if(!r.ok)throw new Error(j.error||"Checkout could not start");
       if(j.mode==="demo"){
-        setPaid({paymentId:String(j.paymentId||"demo-verified"),supplier:best.supplierName,demo:true});
+        setPaid({paymentId:String(j.paymentId||"demo-verified"),supplier:best.supplierName,demo:true,procurementOrderId:String(j.procurementOrderId),receiptToken:String(j.receiptToken)});
         setPaying(false);
         return;
       }
@@ -72,7 +74,7 @@ export function SmartBuyClient(){
           try{
             const vr=await fetch("/api/procurement/checkout/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...response,authorization_token:j.authorizationToken})});
             const vj=await vr.json();if(!vr.ok)throw new Error(vj.error||"Payment verification failed");
-            setPaid({paymentId:String(response.razorpay_payment_id||"verified"),supplier:best.supplierName,demo:false});
+            setPaid({paymentId:String(response.razorpay_payment_id||"verified"),supplier:best.supplierName,demo:false,procurementOrderId:String(vj.procurementOrderId),receiptToken:String(vj.receiptToken)});
           }catch(e){setError(e instanceof Error?e.message:"Payment verification failed");}
           finally{setPaying(false);}
         },
@@ -92,6 +94,15 @@ export function SmartBuyClient(){
       ]})});
       const j=await r.json();if(!r.ok)throw new Error(j.error||"Basket optimization failed");setBasket(j);
     }catch(e){setError(e instanceof Error?e.message:"Basket optimization failed");}finally{setBasketBusy(false);}
+  }
+
+  async function verifyDelivery(showDiscrepancy=false){
+    if(!paid||!run||!best)return;setReceiving(true);setError("");setReceivingResult(null);
+    try{
+      const discrepantCases=run.parsed.cases>1?run.parsed.cases-1:run.parsed.cases;
+      const response=await fetch("/api/procurement/receive",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({receiptToken:paid.receiptToken,invoiceNumber:`${showDiscrepancy?"VAR":"OK"}-${Date.now()}`,receivedCases:showDiscrepancy?discrepantCases:run.parsed.cases,invoicedAmountPaise:best.grossPayablePaise+(showDiscrepancy?25000:0)})});
+      const result=await response.json();if(!response.ok)throw new Error(result.error||"Receiving check failed");setReceivingResult(result);
+    }catch(error){setError(error instanceof Error?error.message:"Receiving check failed")}finally{setReceiving(false)}
   }
 
   return <>
@@ -118,6 +129,13 @@ export function SmartBuyClient(){
 
     {error&&<div className="rp-callout danger"><CircleAlert size={20}/><div><strong>Action stopped safely</strong><span>{error}</span></div></div>}
     {paid&&<div className="rp-callout success"><CheckCircle2 size={22}/><div><strong>{paid.demo?"Demo purchase completed":"Purchase verified"}</strong><span>{paid.demo?`Dummy payment completed for ${paid.supplier}. No external account was contacted; inventory is committed.`:`Razorpay confirmed the Test Mode payment to ${paid.supplier}. Inventory is committed.`}</span></div><a href="/audit" className="rp-btn ghost">View audit <ArrowRight size={17}/></a></div>}
+
+    {paid&&run&&best&&<section className="rp-receiving-shield">
+      <div className="rp-receiving-copy"><div className="rp-kicker"><ShieldAlert size={17}/> DELIVERY DISCREPANCY SHIELD</div><h2>Prove the delivery before closing the order.</h2><p>RazorProcure checks the purchase order, physical receipt and supplier invoice with server-owned values. Exceptions stop automatically and show the money protected.</p><div><button className="rp-btn primary" onClick={()=>verifyDelivery(false)} disabled={receiving}>{receiving?<Loader2 className="spin"/>:<CheckCircle2/>} Verify exact delivery</button><button className="rp-btn ghost" onClick={()=>verifyDelivery(true)} disabled={receiving}><ShieldAlert/> Test supplier discrepancy</button></div></div>
+      <div className={`rp-receiving-result ${receivingResult?.status==="EXCEPTION_BLOCKED"?"blocked":""}`}>
+        {!receivingResult?<><ReceiptText/><strong>Awaiting delivery</strong><span>Ordered {run.parsed.cases} case{run.parsed.cases===1?"":"s"} · authorized {inr(best.grossPayablePaise)}</span></>:<><div className="rp-match-status"><strong>{receivingResult.status.replace("_"," ")}</strong><span>{receivingResult.status==="MATCHED"?"Order can close":"Supplier exception held for review"}</span></div><div className="rp-match-checks"><span>PO <b>{receivingResult.checks.purchaseOrder}</b></span><span>Receipt <b>{receivingResult.checks.receipt}</b></span><span>Invoice <b>{receivingResult.checks.invoice}</b></span></div><div className="rp-protected-value"><span>Value protected</span><strong>{inr(receivingResult.protectedValuePaise)}</strong></div>{receivingResult.exceptions.length>0&&<small>{receivingResult.exceptions.join(" · ")}</small>}</>}
+      </div>
+    </section>}
 
     {run&&<div className="rp-buy-layout">
       <section className="rp-plan-panel">

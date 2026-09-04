@@ -6,7 +6,17 @@
 
 Open **Home**. Point to potential savings, reorders approaching and better sourcing plans.
 
-## 0:25–2:45 — Flagship live buyer
+## 0:25–1:35 — Smart Buy and receiving protection
+
+Open **Smart Buy** → **Example 1** → **Compare & optimize** → **Approve demo purchase**.
+
+1. Point to true landed cost: item price, GST and delivery are all visible.
+2. Explain that policy, current stock and payable amount are recalculated on the server.
+3. After the dummy purchase completes, click **Test supplier discrepancy**.
+4. Show the invoice check fail, automatic exception hold and **₹250 value protected**.
+5. Optionally click **Verify exact delivery** to show the clean three-way match path.
+
+## 1:35–3:10 — Flagship live buyer
 
 Open **Smart Buy** → **Run full demo**.
 
@@ -21,13 +31,13 @@ Open **Smart Buy** → **Run full demo**.
 9. Click **Simulate payment**. The account-free demo creates dummy identifiers without contacting a payment provider.
 10. Point out the optional private Razorpay Test adapter separately verifies signature **and** provider payment/order state before fulfilment.
 
-## 2:45–3:25 — Failure
+## 3:10–3:40 — Failure
 
 Click **Reset** → **Inventory race**.
 
 Two 20-unit reservation attempts contend for 24 units. Exactly one atomic reservation succeeds. The second is replanned to central stock, but the higher payable needs explicit approval and no payment is created.
 
-## 3:25–4:10 — Shadow Funnel
+## 3:40–4:10 — Shadow Funnel
 
 Stay in **Smart Buy** and inspect the trace and safety kernel.
 
@@ -37,14 +47,14 @@ Say the claim boundary exactly:
 
 Show observed/inferred/unknown provenance.
 
-## 4:10–4:45 — Opportunities
+## 4:10–4:40 — Opportunities
 
 Open **Savings Insights**.
 
 Explain paired replay: identical buyer intents, identical merchant snapshot, rescue disabled in control and enabled only after rejection in treatment. Headline is **net incremental contribution**, not gross revenue.
 
-## 4:45–5:00 — Audit / close
+## 4:40–5:00 — Audit / close
 
 Open **Audit**.
 
-“Every money-affecting decision is deterministic, bound to exact offer state and auditable. LLMs may understand language; they never control arithmetic, inventory, evidence validity or payment.”
+“Every money-affecting decision is deterministic, bound to exact offer state and auditable—from request and payment through physical receipt. LLMs may understand language; they never control arithmetic, inventory, evidence validity or payment.”

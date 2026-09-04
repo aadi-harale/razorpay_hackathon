@@ -414,8 +414,27 @@ function initProcurementSchema() {
       FOREIGN KEY (reservation_id) REFERENCES supplier_reservations(id)
     );
 
+    CREATE TABLE IF NOT EXISTS procurement_receipts (
+      id TEXT PRIMARY KEY,
+      merchant_id TEXT NOT NULL,
+      order_id TEXT NOT NULL,
+      invoice_number TEXT NOT NULL,
+      ordered_cases INTEGER NOT NULL CHECK(ordered_cases > 0),
+      received_cases INTEGER NOT NULL CHECK(received_cases >= 0),
+      authorized_amount_paise INTEGER NOT NULL CHECK(authorized_amount_paise > 0),
+      invoiced_amount_paise INTEGER NOT NULL CHECK(invoiced_amount_paise > 0),
+      protected_value_paise INTEGER NOT NULL CHECK(protected_value_paise >= 0),
+      status TEXT NOT NULL CHECK(status IN ('MATCHED','EXCEPTION_BLOCKED')),
+      detail_json TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      UNIQUE(order_id,invoice_number),
+      FOREIGN KEY (merchant_id) REFERENCES merchants(id),
+      FOREIGN KEY (order_id) REFERENCES procurement_orders(id)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_purchase_memory ON retailer_purchase_lines(merchant_id,purchased_at DESC);
     CREATE INDEX IF NOT EXISTS idx_procurement_runs ON procurement_runs(merchant_id,created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_procurement_receipts ON procurement_receipts(merchant_id,created_at DESC);
   `);
 }
 

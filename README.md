@@ -14,7 +14,7 @@
   <a href="#-five-minute-demo"><img alt="Demo ready" src="https://img.shields.io/badge/DEMO-READY-32D583?style=for-the-badge" /></a>
   <a href="#-the-trust-model"><img alt="ShadowFunnel protected" src="https://img.shields.io/badge/SHADOWFUNNEL-PROTECTED-7C6CFF?style=for-the-badge" /></a>
   <img alt="Account free payments" src="https://img.shields.io/badge/PAYMENTS-DUMMY_ONLY-18B6A4?style=for-the-badge" />
-  <a href="#-validation"><img alt="51 tests passing" src="https://img.shields.io/badge/TESTS-51_PASSING-20B2AA?style=for-the-badge" /></a>
+  <a href="#-validation"><img alt="55 tests passing" src="https://img.shields.io/badge/TESTS-55_PASSING-20B2AA?style=for-the-badge" /></a>
   <a href="./LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/LICENSE-MIT-5B6CFF?style=for-the-badge" /></a>
 </p>
 
@@ -61,6 +61,7 @@ Small retailers repeat the same buying work every week: read invoices, remember 
 | **ShadowFunnel** | A clear pass/block reason before checkout | Budget, GST, delivery, inventory, evidence, and spend gates |
 | **Atomic inventory** | One request wins; overselling is blocked | Transactional reservation with race-safe state transitions |
 | **Account-free payment demo** | One-click simulated purchase | Server-owned amount, deterministic completion, zero external account access |
+| **Delivery discrepancy shield** | Exact receipt closes; overcharge or shortage is held | Server-authorized three-way PO/receipt/invoice match with protected value |
 | **Replay proof** | Baseline vs guarded outcome | Reproducible paired runs across 50 purchase intents |
 | **Audit trail** | Every decision in one place | Append-only events connecting intent, gate, order, payment, and outcome |
 
@@ -75,10 +76,10 @@ flowchart LR
     E -->|Blocked| F[Explain + Audit]
     E -->|Approved| G[Atomic Reservation]
     G --> H[Dummy Payment]
-    H --> I[Verified Demo Result]
-    I --> J[Commit Inventory]
-    J --> B
-    J --> F
+    H --> I[Commit Inventory]
+    I --> J{PO + Receipt + Invoice}
+    J -->|Match| B
+    J -->|Variance| F
 ```
 
 ## 🎬 Five-minute demo
@@ -90,14 +91,15 @@ Run `start.bat`, open the exact URL it prints, sign in, and follow this path:
 | **0:00** | **Home → Try demo invoice** | “RazorProcure turns an invoice into three structured line items without a network dependency. Repeating it is idempotent.” |
 | **0:40** | **Purchase Memory** | “The agent now understands what this retailer buys—not just what is in one cart.” |
 | **1:10** | **Smart Buy → Example 1 → Compare & optimize → Approve demo purchase** | “We compare connected suppliers using true landed cost, then expose every decision before a local dummy payment commits stock.” |
-| **1:45** | **Smart Buy → Optimize 3-item basket** | “The optimizer allocates the complete basket across two suppliers and compares the result with the full usual-supplier basket.” |
-| **2:10** | **Smart Buy → Open safety demo → Run full demo** | “ShadowFunnel deterministically checks policy, inventory, evidence, and spend. The LLM cannot bypass these gates.” |
+| **1:40** | **Delivery discrepancy shield → Test supplier discrepancy** | “A ₹250 invoice overcharge is held automatically because the PO, receipt and invoice do not match. The UI quantifies the value protected.” |
+| **2:05** | **Smart Buy → Optimize 3-item basket** | “The optimizer allocates the complete basket across two suppliers and compares the result with the full usual-supplier basket.” |
+| **2:25** | **Smart Buy → Open safety demo → Run full demo** | “ShadowFunnel deterministically checks policy, inventory, evidence, and spend. The LLM cannot bypass these gates.” |
 | **3:00** | **Reset → Inventory race** | “One atomic claim wins; the loser is replanned and payment remains blocked until the revised mandate is approved.” |
 | **3:35** | **Merchant Truth → Try demo certificate** | “Supplier evidence is checksum-bound and verified as current—not accepted on model confidence.” |
 | **4:05** | **Savings Insights → Run paired replay** | “The same intents run through baseline and guarded paths, making the safety and savings claim reproducible.” |
 | **4:40** | **Audit** | “Every recommendation, block, reservation, checkout, and outcome is explainable after the fact.” |
 
-To show payment safely, return to **Smart Buy**, run the full demo, and click **Simulate payment**. The server completes the dummy transaction, commits the reservation, and writes the audit event without contacting an external provider.
+To show payment safely, use **Smart Buy → Example 1 → Compare & optimize → Approve demo purchase**. Then click **Test supplier discrepancy** to show the post-payment three-way match holding a dummy ₹250 overcharge. The server completes the dummy transaction, commits the reservation and writes both payment and receiving audit events without contacting an external provider.
 
 ## 🧠 The trust model
 
@@ -130,6 +132,7 @@ The **ShadowFunnel** kernel is the boundary between probabilistic suggestions an
 - Model output is treated as untrusted data and schema-validated.
 - Supplier eligibility, GST, delivery, budget, evidence, and spend limits are recalculated server-side.
 - Inventory is reserved transactionally before checkout and committed only after verified payment.
+- A signed receipt authority binds receiving to the paid order; shortages and invoice variances are held before order closure.
 - Public demo payments are completed internally with explicit `externalNetworkCall: false` audit evidence.
 - External Razorpay Test Mode is fail-closed and available only through an intentional private `PAYMENT_MODE=razorpay_test` opt-in.
 - Same-origin controls, signed sessions, rate limits, CSP, and redacted errors protect the application surface.
@@ -141,7 +144,7 @@ The **ShadowFunnel** kernel is the boundary between probabilistic suggestions an
 | **Next.js App Router** | Merchant UI, server components, authenticated route handlers |
 | **Procurement engine** | Normalization, deterministic landed cost, supplier ranking, policy evaluation |
 | **ShadowFunnel** | Preflight gates, reservations, replay, evidence verification, audit events |
-| **SQLite** | Local durable single-user state for sessions, inventory, purchases, orders, and audit |
+| **SQLite** | Local durable single-user state for sessions, inventory, purchases, orders, receipts, and audit |
 | **Payment simulator** | Default account-free flow using dummy order/payment identifiers and no external network call |
 | **Razorpay adapter** | Optional, private Test Mode integration; disabled by default and never accepts live-mode keys |
 | **OpenRouter** | Optional extraction for merchant-uploaded invoices; never required for the bundled demo |
@@ -217,12 +220,12 @@ The current verified baseline is:
 
 - TypeScript: clean
 - ESLint: clean
-- Vitest: **51/51 tests passing** across 15 test files
+- Vitest: **55/55 tests passing** across 16 test files
 - Next.js production build: successful
 - Dependency audit: **0 known vulnerabilities**
 - Secret scan: clean
 
-On Windows, `verify.bat` runs the same static release gate. With the app running, `npm run smoke` covers authenticated invoice import, full-basket optimization, the flagship flow, dummy checkout, the inventory race with replan, replay and audit.
+On Windows, `verify.bat` runs the same static release gate. With the app running, `npm run smoke` covers authenticated invoice import, full-basket optimization, both receiving outcomes, the flagship flow, dummy checkout, the inventory race with replan, replay and audit.
 
 ## ☁️ Deployment note
 
@@ -233,6 +236,7 @@ See [`docs/VERCEL_DEPLOYMENT.md`](./docs/VERCEL_DEPLOYMENT.md) for the exact bou
 ## 📚 Documentation
 
 - [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — system design and trust boundaries
+- [`docs/COMPETITIVE_BENCHMARK.md`](./docs/COMPETITIVE_BENCHMARK.md) — official-product benchmark and honest differentiation
 - [`docs/API.md`](./docs/API.md) — integration surface for external agents
 - [`docs/DEMO_SCRIPT.md`](./docs/DEMO_SCRIPT.md) — extended presentation script
 - [`docs/DATA_MODEL.md`](./docs/DATA_MODEL.md) — persisted entities and invariants

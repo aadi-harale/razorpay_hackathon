@@ -8,6 +8,7 @@ export async function POST(request:Request){
   try{
     enforceSameOrigin(request); await requireApiSession();
     db.transaction(()=>{
+      db.prepare(`DELETE FROM procurement_receipts`).run();
       db.prepare(`DELETE FROM procurement_orders`).run();
       db.prepare(`DELETE FROM supplier_reservations`).run();
       db.prepare(`DELETE FROM procurement_run_options`).run();

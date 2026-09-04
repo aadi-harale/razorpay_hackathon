@@ -11,6 +11,7 @@ RazorProcure uses SQLite locally. All money columns ending in `_paise` are integ
 | Procurement memory | `retailer_purchase_lines` | Source-labelled invoice/manual purchase facts and normalized or explicitly unmatched identities |
 | Supplier network | `connected_suppliers`, `supplier_listings`, `supplier_reservations` | Verification, GST capability, reliability, live stock and atomic case reservations |
 | Procurement plans | `procurement_runs`, `procurement_run_options`, `procurement_orders` | Full comparison snapshots, selected plan and payment state |
+| Receiving | `procurement_receipts` | Idempotent invoice-number receipts, three-way result, variances and protected value |
 | Payment | `commerce_orders`, `processed_webhooks` | Idempotent local order claims and webhook replay protection |
 | Evidence | `uploaded_evidence` | File hash, parse state and accepted/rejected evidence status |
 | Evaluation | `replay_runs`, `replay_results` | Reproducible control/treatment results and contention effects |
@@ -23,3 +24,4 @@ Key invariants:
 - Unknown invoice identities use an `unmatched-*` key and cannot silently become a catalog match.
 - Invoice hashes make repeated imports idempotent.
 - Payment success is server-owned. Demo mode creates explicit dummy identifiers; private Test Mode additionally requires signature and provider-state verification.
+- Receiving authority is signed from a paid server order. A quantity or invoice variance produces `EXCEPTION_BLOCKED` and an auditable protected value.

@@ -35,6 +35,16 @@ expect(demo.offerId&&demo.steps.length>=8,"Flagship workflow failed");
 if(health.paymentMode==="demo"){
   const checkout=(await call("/api/checkout/start",{method:"POST",headers:{"content-type":"application/json",origin:base},body:JSON.stringify({offerId:demo.offerId})})).body;
   expect(checkout.mode==="demo"&&checkout.status==="PAID"&&String(checkout.paymentId).startsWith("demo_pay_"),"Dummy payment contract failed");
+
+  const requestText="Buy 1 case of Fortune Sunflower Oil 1L x 48 under ₹8,500 within 2 days with GST invoice";
+  const comparison=(await call("/api/procurement/compare",{method:"POST",headers:{"content-type":"application/json",origin:base},body:JSON.stringify({text:requestText})})).body;
+  expect(comparison.recommended?.policyResult==="ALLOW","Smart Buy recommendation failed");
+  const procurementCheckout=(await call("/api/procurement/checkout/start",{method:"POST",headers:{"content-type":"application/json",origin:base},body:JSON.stringify({runId:comparison.runId,text:requestText})})).body;
+  expect(procurementCheckout.status==="PAID"&&procurementCheckout.receiptToken,"Procurement checkout did not issue receiving authority");
+  const exactReceipt=(await call("/api/procurement/receive",{method:"POST",headers:{"content-type":"application/json",origin:base},body:JSON.stringify({receiptToken:procurementCheckout.receiptToken,invoiceNumber:`SMOKE-OK-${Date.now()}`,receivedCases:1,invoicedAmountPaise:procurementCheckout.amount})})).body;
+  expect(exactReceipt.status==="MATCHED"&&exactReceipt.protectedValuePaise===0,"Three-way match contract failed");
+  const guardedReceipt=(await call("/api/procurement/receive",{method:"POST",headers:{"content-type":"application/json",origin:base},body:JSON.stringify({receiptToken:procurementCheckout.receiptToken,invoiceNumber:`SMOKE-VAR-${Date.now()}`,receivedCases:1,invoicedAmountPaise:procurementCheckout.amount+25_000})})).body;
+  expect(guardedReceipt.status==="EXCEPTION_BLOCKED"&&guardedReceipt.protectedValuePaise===25_000,"Delivery discrepancy shield failed");
 }
 
 const race=(await call("/api/demo/race",{method:"POST",headers:{origin:base}})).body;

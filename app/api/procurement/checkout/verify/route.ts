@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession } from "@/lib/auth";
-import { enforceSameOrigin, publicApiError, verifyServerState } from "@/lib/security";
+import { enforceSameOrigin, publicApiError, signServerState, verifyServerState } from "@/lib/security";
 import { db } from "@/lib/db";
 import { verifyCheckoutSignature, razorpayClient } from "@/lib/razorpay";
 import { commitSupplierReservation, getProcurementRun } from "@/lib/procurement";
@@ -41,7 +41,8 @@ export async function POST(request:Request){
     }
     if(!local && statelessOk){
       audit({eventType:"PROCUREMENT_PAYMENT_CAPTURED_STATELESS",actor:"PAYMENT_GATEWAY",severity:"SUCCESS",detail:"Vercel demo payment verified cryptographically and against authoritative Razorpay state. Durable inventory/audit persistence requires an external production database.",metadata:{paymentId:payment.id,razorpayOrderId:storedOrderId,amountPaise:expectedAmount,supplierName:auth?.supplierName??null}});
-      return NextResponse.json({ok:true,status:"PAID",paymentId:payment.id,orderId:storedOrderId,vercelDemo:true});
+      const receiptToken=signServerState({kind:"PROCUREMENT_RECEIPT",merchantId:session.merchantId,localOrderId:String(auth!.localOrderId??storedOrderId),runId:String(auth!.runId??"stateless"),productKey:String(auth!.productKey??"unknown"),cases:Number(auth!.cases??1),expectedAmountPaise:expectedAmount,supplierName:String(auth!.supplierName??"Verified supplier"),exp:Date.now()+24*60*60*1000});
+      return NextResponse.json({ok:true,status:"PAID",paymentId:payment.id,orderId:storedOrderId,procurementOrderId:String(auth!.localOrderId??storedOrderId),receiptToken,vercelDemo:true});
     }
     const committed=commitSupplierReservation(local!.reservation_id);
     const status=committed?"PAID":"RECONCILIATION_REQUIRED";
@@ -56,6 +57,7 @@ export async function POST(request:Request){
       }
     }
     audit({eventType:committed?"PROCUREMENT_PAYMENT_CAPTURED":"PROCUREMENT_RECONCILIATION_REQUIRED",actor:"PAYMENT_GATEWAY",severity:committed?"SUCCESS":"WARN",detail:committed?"Razorpay payment was independently verified, supplier reservation committed, and purchase memory updated.":"Payment captured after supplier reservation could not be committed; manual reconciliation required.",metadata:{runId:local!.run_id,paymentId:payment.id,razorpayOrderId:storedOrderId,amountPaise:expectedAmount,status}});
-    return NextResponse.json({ok:true,status,paymentId:payment.id,orderId:storedOrderId});
+    const receiptToken=signServerState({kind:"PROCUREMENT_RECEIPT",merchantId:session.merchantId,localOrderId:local!.id,runId:local!.run_id,productKey:String(auth?.productKey??"unknown"),cases:Number(auth?.cases??1),expectedAmountPaise:expectedAmount,supplierName:String(auth?.supplierName??"Verified supplier"),exp:Date.now()+24*60*60*1000});
+    return NextResponse.json({ok:true,status,paymentId:payment.id,orderId:storedOrderId,procurementOrderId:local!.id,receiptToken});
   }catch(error){return NextResponse.json({error:publicApiError(error,"Payment verification failed safely.")},{status:400});}
 }

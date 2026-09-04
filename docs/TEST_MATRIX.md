@@ -14,9 +14,9 @@ The canonical release command is `npm run verify`. Do not convert `NOT VERIFIED`
 | Atomic inventory and replan | `tests/inventory.test.ts`, `tests/procurement-reservation.test.ts` | Smart Buy → Inventory race |
 | Offer binding | `tests/offers.test.ts` | Run full demo and inspect Audit |
 | Payment signatures | `tests/payment-signatures.test.ts` | Demo payment locally; private live Test Mode remains separate |
+| Three-way receiving match | `tests/reconciliation.test.ts`, `npm run smoke` | Smart Buy → purchase → verify exact delivery / test supplier discrepancy |
 | Replay reproducibility | `tests/replay.test.ts` | Savings Insights → Run paired replay |
 | Production compilation | `npm run typecheck`, `npm run lint`, `npm run build` | Inspect 1440×900 and 1280-wide layouts |
 | Dependency/security baseline | `npm run secret-scan`, `npm audit --audit-level=high` | Confirm deployment environment contains no payment credentials |
 
 Live Razorpay Test Order creation, provider fetch verification and webhook delivery are `NOT VERIFIED` whenever the account-free demo profile is active. This is intentional and must remain visible in a release report.
-

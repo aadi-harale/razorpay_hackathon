@@ -15,6 +15,7 @@ All require the authenticated HttpOnly merchant session unless noted.
 | POST | `/api/evidence/upload` | validated Merchant Truth evidence ingestion |
 | POST | `/api/checkout/start` | revalidate bound offer and create/reuse Razorpay Order |
 | POST | `/api/checkout/verify` | verify Checkout HMAC + fetch/verify payment/order state |
+| POST | `/api/procurement/receive` | reconcile a paid procurement PO, physical receipt and supplier invoice |
 | GET | `/api/audit` | audit events |
 | POST | `/api/replay/run` | persist isolated/stateful replay |
 | GET | `/api/replay/latest` | latest replay + opportunities |
@@ -22,7 +23,7 @@ All require the authenticated HttpOnly merchant session unless noted.
 
 `POST /api/webhooks/razorpay` is not session-authenticated; it authenticates the **raw body** with the Razorpay webhook HMAC and deduplicates `x-razorpay-event-id`.
 
-No checkout endpoint accepts a client-authoritative amount.
+No checkout endpoint accepts a client-authoritative amount. Receiving amounts are compared against a signed, server-issued paid-order authorization and cannot alter the authorized payable value.
 
 ## External AI-buyer surface
 
