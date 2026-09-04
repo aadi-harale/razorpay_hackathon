@@ -12,6 +12,7 @@ const patterns = [
   /sk-or-v1-[A-Za-z0-9]{20,}/g,
   /OPENROUTER_API_KEY\s*=\s*["']?sk-/g,
   /RAZORPAY_KEY_SECRET\s*=\s*["']?[A-Za-z0-9]{12,}/g,
+  /postgres(?:ql)?:\/\/[^\s:'"]+:[^\s@'"]+@/g,
 ];
 const hits = [];
 

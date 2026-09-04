@@ -1,6 +1,6 @@
 {
   "name": "razorprocure-agentic-procurement",
-  "version": "2.0.0",
+  "version": "2.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -18,13 +18,15 @@
     "secret-scan": "node scripts/secret-scan.mjs",
     "auth:sync": "node scripts/ensure-local-auth.mjs",
     "auth:reset": "node scripts/ensure-local-auth.mjs --rotate-password --unlock",
-    "payments:disconnect": "node scripts/disable-external-payments.mjs"
+    "payments:disconnect": "node scripts/disable-external-payments.mjs",
+    "db:bootstrap:supabase": "node --experimental-strip-types scripts/bootstrap-supabase.mjs"
   },
   "dependencies": {
     "better-sqlite3": "13.0.3",
     "decimal.js": "10.6.0",
     "lucide-react": "1.40.0",
     "next": "16.3.4",
+    "postgres": "3.4.9",
     "razorpay": "2.9.8",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -35,10 +37,10 @@
     "@types/node": "26.4.1",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",
-    "typescript": "6.0.3",
-    "vitest": "4.1.11",
     "eslint": "9.39.5",
-    "eslint-config-next": "16.3.4"
+    "eslint-config-next": "16.3.4",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11"
   },
   "engines": {
     "node": ">=22.0.0"

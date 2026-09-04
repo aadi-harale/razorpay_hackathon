@@ -17,7 +17,8 @@ The browser and LLM are untrusted. They can request or extract data, but cannot 
 - `lib/openrouter.ts`: invoice extraction only
 - `lib/reconciliation.ts`: deterministic PO/receipt/invoice matching and protected-value calculation
 - `lib/audit.ts`: safe structured audit events
+- `lib/postgresSnapshot.ts`: versioned, checksummed Supabase persistence for the single-user Vercel workspace
 - `tests/`: deterministic domain and security tests
 
 ## Deployment modes
-Local Windows uses durable SQLite under `.data/`. Vercel demo mode uses ephemeral `/tmp`; see `VERCEL_DEPLOYMENT.md`.
+Local Windows uses durable SQLite under `.data/`. Vercel restores the same transactional engine under `/tmp` from a durable Supabase Postgres snapshot and checkpoints audited mutations with optimistic version checks. This is designed for the single-user demo, not concurrent multi-tenant traffic; see `VERCEL_DEPLOYMENT.md`.

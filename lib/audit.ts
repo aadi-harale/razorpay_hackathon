@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { db } from "@/lib/db";
+import { after } from "next/server";
+import { db, durableCheckpoint, durableDatabaseEnabled } from "@/lib/db";
 import { DEMO } from "@/lib/config";
 import { safeJson } from "@/lib/security";
 
@@ -30,6 +31,9 @@ export function audit(input: {
     safeJson(input.metadata ?? {}),
     createdAt
   );
+  if(durableDatabaseEnabled()){
+    try{after(async()=>{try{await durableCheckpoint()}catch(error){console.error("[RazorProcure] Durable checkpoint failed",error instanceof Error?error.message:"unknown error")}})}catch{}
+  }
   return { id, createdAt };
 }
 

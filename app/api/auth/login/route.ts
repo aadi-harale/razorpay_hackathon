@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { assertLoginAllowed, clearLoginFailures, createSession, loginAttemptKey, recordLoginFailure, verifyCredentials } from "@/lib/auth";
 import { enforceSameOrigin } from "@/lib/security";
+import { durableCheckpoint } from "@/lib/db";
 
 const schema = z.object({ email: z.string().email().max(200), password: z.string().min(8).max(200) });
 
@@ -14,10 +15,12 @@ export async function POST(request: Request) {
     assertLoginAllowed(key);
     if (!verifyCredentials(parsed.data.email, parsed.data.password)) {
       recordLoginFailure(key);
+      await durableCheckpoint();
       await new Promise((resolve) => setTimeout(resolve, 250));
       return NextResponse.json({ error: "Invalid credentials." }, { status: 401 });
     }
     clearLoginFailures(key);
+    await durableCheckpoint();
     await createSession();
     return NextResponse.json({ ok: true });
   } catch (error) {

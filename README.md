@@ -188,6 +188,7 @@ No credentials are committed. Local values belong in `.env.local`.
 | `AUTH_PASSWORD` | Single local merchant password | Generated locally |
 | `AUTH_SECRET` | Signs authenticated sessions | Generated locally |
 | `DATABASE_URL` | SQLite file location | Defaults to local `.data` storage |
+| `POSTGRES_URL` | Supabase Postgres snapshot store for durable Vercel state | Required on Vercel |
 | `PAYMENT_MODE` | `demo` uses account-free dummy payments | Defaults to `demo` |
 | `OPENROUTER_API_KEY` | Real invoice extraction | Optional; demo invoice works offline |
 
@@ -231,7 +232,7 @@ On Windows, `verify.bat` runs the same static release gate. With the app running
 
 ## ☁️ Deployment note
 
-The repository is Vercel-build ready and includes `vercel.json`. Its Vercel demo mode stores SQLite in ephemeral `/tmp`, which is appropriate for a disposable hackathon demo—not durable production data. Before a public production launch, replace the local database adapter with a managed store such as Postgres/Neon or Turso and rotate all deployment credentials.
+The repository is Vercel-build ready and includes `vercel.json`. On Vercel it restores and checkpoints a checksummed, versioned workspace snapshot through Supabase Postgres while retaining SQLite's local transactional engine. This is durable for the single-user deployment; a future multi-tenant release should move to row-native Postgres repositories.
 
 See [`docs/VERCEL_DEPLOYMENT.md`](./docs/VERCEL_DEPLOYMENT.md) for the exact boundary.
 

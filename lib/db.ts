@@ -1,10 +1,12 @@
 import Database from "better-sqlite3";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { DEMO } from "@/lib/config";
 import { PROCUREMENT } from "@/lib/procurementConfig";
+import { loadDurableSnapshot, postgresSnapshotConfigured, saveDurableSnapshot } from "@/lib/postgresSnapshot";
 
 const isVercel = process.env.VERCEL === "1";
+const isVercelRuntime=isVercel&&process.env.NEXT_PHASE!=="phase-production-build";
 const configuredDb = process.env.DATABASE_URL?.startsWith("file:") ? process.env.DATABASE_URL.slice(5) : ".data/razorprocure.db";
 // Vercel's deployment bundle is read-only. /tmp is writable but ephemeral; use this
 // only for the hosted demo. Local mode keeps durable SQLite under the project.
@@ -12,6 +14,12 @@ const dbPath = isVercel
   ? "/tmp/razorprocure.db"
   : resolve(/* turbopackIgnore: true */ process.cwd(), configuredDb);
 mkdirSync(dirname(dbPath), { recursive: true });
+
+let durableVersion=0;
+if(isVercelRuntime&&postgresSnapshotConfigured()){
+  const durable=await loadDurableSnapshot();
+  if(durable){writeFileSync(dbPath,durable.snapshot);durableVersion=durable.version}
+}
 
 const globalForDb = globalThis as unknown as { shadowDb?: Database.Database };
 export const db = globalForDb.shadowDb ?? new Database(dbPath);
@@ -515,3 +523,22 @@ export function ensureInventory() {
 }
 
 ensureInventory();
+
+let checkpointQueue=Promise.resolve<number|null>(null);
+export function durableDatabaseEnabled(){return isVercelRuntime&&postgresSnapshotConfigured()}
+export function durableCheckpoint(){
+  if(!durableDatabaseEnabled())return Promise.resolve<number|null>(null);
+  const checkpoint=checkpointQueue.then(async()=>{
+    const next=await saveDurableSnapshot(db.serialize(),durableVersion);durableVersion=next;return next;
+  });
+  checkpointQueue=checkpoint.catch(()=>null);
+  return checkpoint;
+}
+
+if(durableDatabaseEnabled()&&durableVersion===0){
+  try{durableVersion=await saveDurableSnapshot(db.serialize(),0)}
+  catch(error){
+    if(!(error instanceof Error)||error.message!=="DURABLE_SNAPSHOT_VERSION_CONFLICT")throw error;
+    const current=await loadDurableSnapshot();if(!current)throw error;durableVersion=current.version;
+  }
+}

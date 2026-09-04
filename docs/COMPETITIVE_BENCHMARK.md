@@ -27,4 +27,4 @@ This is intentionally deterministic. The model can explain the result, but the s
 
 ## Honest scope boundary
 
-The current release is a single-merchant hackathon product with seeded connected suppliers and an ephemeral Vercel database. Enterprise suites offer broader ERP integrations, supplier networks, international tax coverage and mature multi-tenant administration. Those are production roadmap items, not claims made by this demo.
+The current release is a single-merchant hackathon product with seeded connected suppliers and durable single-workspace Supabase snapshot persistence. Enterprise suites offer broader ERP integrations, supplier networks, international tax coverage, row-native multi-tenant storage and mature administration. Those are production roadmap items, not claims made by this demo.

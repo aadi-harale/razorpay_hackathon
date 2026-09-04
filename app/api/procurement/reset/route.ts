@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireApiSession } from "@/lib/auth";
 import { enforceSameOrigin } from "@/lib/security";
-import { db } from "@/lib/db";
+import { db, durableCheckpoint } from "@/lib/db";
 import { PROCUREMENT } from "@/lib/procurementConfig";
 
 export async function POST(request:Request){
@@ -16,6 +16,7 @@ export async function POST(request:Request){
       db.prepare(`UPDATE supplier_listings SET reserved_cases=0`).run();
       for(const l of PROCUREMENT.listings)db.prepare(`UPDATE supplier_listings SET available_cases=? WHERE id=?`).run(l.availableCases,`${l.supplierId}__${l.productKey}`);
     })();
+    await durableCheckpoint();
     return NextResponse.json({ok:true});
   }catch(error){return NextResponse.json({error:error instanceof Error?error.message:"Reset failed."},{status:400});}
 }
