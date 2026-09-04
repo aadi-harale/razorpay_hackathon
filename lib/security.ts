@@ -70,6 +70,7 @@ export function publicApiError(error: unknown, fallback: string): string {
     EXTERNAL_PAYMENT_DISABLED: "External payments are disabled in this public demo.",
     OPENROUTER_NOT_CONFIGURED: "Invoice AI is not configured.",
     PROCUREMENT_PRODUCT_NOT_SUPPORTED: "That product is not in the connected demo catalog yet.",
+    PROCUREMENT_PRODUCT_REVIEW_REQUIRED: "The product match is ambiguous and requires retailer review before purchase.",
     PROCUREMENT_RUN_NOT_READY: "The procurement plan is no longer available. Compare again.",
     PROCUREMENT_PLAN_EXPIRED: "The supplier plan expired. Compare again before paying.",
     PROCUREMENT_PLAN_NO_LONGER_SAFE: "Supplier price, stock, or policy changed. Compare again before paying.",

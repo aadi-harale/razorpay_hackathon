@@ -8,12 +8,13 @@ node -e "process.exit(Number(process.versions.node.split('.')[0])>=22?0:1)"
 rm -rf .next
 npm run build
 mkdir -p .run
-PORT=3100 nohup npm start -- -p 3100 > .run/server.log 2>&1 & echo $! > .run/server.pid
-echo 3100 > .run/server.port
+PORT=$(node -e "const n=require('net');let p=3100;const next=()=>{if(p>3199)process.exit(1);const s=n.createServer();s.once('error',()=>{p++;next()});s.listen(p,'127.0.0.1',()=>s.close(()=>console.log(p)))};next()")
+nohup npm start -- -p "$PORT" > .run/server.log 2>&1 & echo $! > .run/server.pid
+echo "$PORT" > .run/server.port
 for _ in $(seq 1 90); do
-  body=$(curl -fsS http://localhost:3100/api/health 2>/dev/null || true)
+  body=$(curl -fsS "http://localhost:$PORT/api/health" 2>/dev/null || true)
   if printf '%s' "$body" | grep -q '"app":"razorprocure"'; then
-    printf 'RazorProcure ready at http://localhost:3100\n'
+    printf 'RazorProcure ready at http://localhost:%s\n' "$PORT"
     exit 0
   fi
   sleep .5

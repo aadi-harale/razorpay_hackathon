@@ -20,7 +20,7 @@ if not exist .env.local (
 )
 
 echo [RazorProcure] Payment mode: account-free demo simulator. No external payment account is contacted.
-powershell -NoProfile -Command "$line=(Get-Content '.env.local' | Where-Object { $_ -match '^OPENROUTER_API_KEY=' } | Select-Object -First 1); if ($line -match 'sk-') { exit 0 } else { exit 1 }"
+powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\check-openrouter.ps1"
 if errorlevel 1 echo [RazorProcure] WARNING: OpenRouter key is not configured. Invoice AI will be unavailable.
 
 if not exist node_modules (
@@ -59,14 +59,16 @@ if not exist .run mkdir .run
 powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\start-server.ps1"
 if errorlevel 1 goto :fail
 
-echo [RazorProcure] Starting at http://localhost:3100
 powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\wait-health.ps1"
 if errorlevel 1 (
   echo [RazorProcure] Health/identity check failed. Review .run\server.log
   goto :failstop
 )
 
-start "" http://localhost:3100
+set /p RAZORPROCURE_PORT=<.run\server.port
+set "RAZORPROCURE_URL=http://localhost:%RAZORPROCURE_PORT%"
+echo [RazorProcure] Starting at %RAZORPROCURE_URL%
+start "" "%RAZORPROCURE_URL%"
 echo.
 echo [RazorProcure] READY
  echo   Fresh RazorProcure build verified. UI + APIs + ShadowFunnel + safe demo payments are online.

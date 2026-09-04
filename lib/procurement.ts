@@ -3,6 +3,7 @@ import Decimal from "decimal.js";
 import { db } from "@/lib/db";
 import { PROCUREMENT } from "@/lib/procurementConfig";
 import { audit } from "@/lib/audit";
+import { DEMO } from "@/lib/config";
 
 export type ProcurementOption = {
   listingId:string;
@@ -31,12 +32,59 @@ type ListingRow={id:string;supplier_id:string;product_key:string;title:string;gr
 
 function id(prefix:string){return `${prefix}_${randomUUID()}`;}
 
+export function getProcurementPolicy(merchantId:string){
+  const row=db.prepare(`SELECT autonomous_spend_limit_paise,version,updated_at FROM merchant_procurement_policy WHERE merchant_id=?`).get(merchantId) as {autonomous_spend_limit_paise:number;version:number;updated_at:string}|undefined;
+  return row??{autonomous_spend_limit_paise:PROCUREMENT.autonomousSpendLimitPaise,version:1,updated_at:null};
+}
+
+export function updateProcurementPolicy(merchantId:string,autonomousSpendLimitPaise:number){
+  if(!Number.isSafeInteger(autonomousSpendLimitPaise)||autonomousSpendLimitPaise<100_000||autonomousSpendLimitPaise>100_000_000)throw new Error("PROCUREMENT_SPEND_LIMIT_INVALID");
+  const now=new Date().toISOString();
+  db.prepare(`INSERT INTO merchant_procurement_policy(merchant_id,autonomous_spend_limit_paise,version,updated_at) VALUES(?,?,1,?) ON CONFLICT(merchant_id) DO UPDATE SET autonomous_spend_limit_paise=excluded.autonomous_spend_limit_paise,version=merchant_procurement_policy.version+1,updated_at=excluded.updated_at`).run(merchantId,autonomousSpendLimitPaise,now);
+  const policy=getProcurementPolicy(merchantId);
+  audit({eventType:"PROCUREMENT_POLICY_UPDATED",actor:"MERCHANT",severity:"INFO",detail:"Merchant autonomous spend limit updated. Existing plans must be compared again before checkout.",metadata:{autonomousSpendLimitPaise:policy.autonomous_spend_limit_paise,version:policy.version}});
+  return policy;
+}
+
+export type ProductMatch = {
+  status:"EXACT"|"HIGH_CONFIDENCE"|"REVIEW_REQUIRED"|"NO_MATCH";
+  productKey:string|null;
+  reason:string;
+};
+
+export function matchProcurementProduct(text:string):ProductMatch {
+  const t=text.toLowerCase().replace(/[×]/g,"x");
+  if(/fortune/.test(t)){
+    if(/(?:500\s*ml|2\s*l(?:itre|iter)?)/.test(t))return {status:"NO_MATCH",productKey:null,reason:"Known brand but incompatible pack size."};
+    if(/sunflower|oil/.test(t)){
+      const exact=/(?:1\s*l|1\s*litre|1\s*liter)/.test(t)&&/(?:x\s*48|48\s*(?:pcs|units|bottles))/i.test(t);
+      return {status:exact?"EXACT":"HIGH_CONFIDENCE",productKey:"fortune-sunflower-oil-1l-case48",reason:exact?"Brand, product, unit size and case quantity match.":"Brand and product match; canonical pack confirmed from the connected catalog."};
+    }
+    return {status:"REVIEW_REQUIRED",productKey:null,reason:"Brand was recognized but product identity is incomplete."};
+  }
+  if(/maggi/.test(t)){
+    if(/(?:140\s*g|280\s*g)/.test(t))return {status:"NO_MATCH",productKey:null,reason:"Known brand but incompatible pack size."};
+    if(/masala|noodle/.test(t)){
+      const exact=/70\s*g/.test(t)&&/(?:x\s*96|96\s*(?:pcs|units|packs))/i.test(t);
+      return {status:exact?"EXACT":"HIGH_CONFIDENCE",productKey:"maggi-masala-70g-case96",reason:exact?"Brand, variant, unit size and case quantity match.":"Brand and product family match; canonical pack confirmed from the connected catalog."};
+    }
+    return {status:"REVIEW_REQUIRED",productKey:null,reason:"Brand was recognized but the variant is ambiguous."};
+  }
+  if(/surf\s*excel/.test(t)){
+    if(/(?:500\s*g|2\s*kg)/.test(t))return {status:"NO_MATCH",productKey:null,reason:"Known brand but incompatible pack size."};
+    if(/matic|detergent/.test(t)){
+      const exact=/1\s*kg/.test(t)&&/(?:x\s*24|24\s*(?:pcs|units|packs))/i.test(t);
+      return {status:exact?"EXACT":"HIGH_CONFIDENCE",productKey:"surf-excel-matic-1kg-case24",reason:exact?"Brand, variant, unit size and case quantity match.":"Brand and product family match; canonical pack confirmed from the connected catalog."};
+    }
+    return {status:"REVIEW_REQUIRED",productKey:null,reason:"Brand was recognized but the variant is ambiguous."};
+  }
+  if(/sunflower\s*oil|instant\s*noodle|matic\s*detergent/.test(t))return {status:"REVIEW_REQUIRED",productKey:null,reason:"A product category matched, but brand and pack identity require review."};
+  return {status:"NO_MATCH",productKey:null,reason:"No connected catalog identity matched."};
+}
+
 export function normalizeProcurementProduct(text:string): string | null {
-  const t=text.toLowerCase();
-  if (/(fortune.*sunflower|sunflower.*oil|fortune.*oil)/.test(t)) return "fortune-sunflower-oil-1l-case48";
-  if (/(maggi|noodle)/.test(t)) return "maggi-masala-70g-case96";
-  if (/(surf.*excel|detergent.*matic|surf.*matic)/.test(t)) return "surf-excel-matic-1kg-case24";
-  return null;
+  const match=matchProcurementProduct(text);
+  return match.status==="EXACT"||match.status==="HIGH_CONFIDENCE"?match.productKey:null;
 }
 
 function unmatchedProductKey(text:string){
@@ -45,8 +93,9 @@ function unmatchedProductKey(text:string){
 }
 
 export function parseProcurementRequest(text:string){
-  const productKey=normalizeProcurementProduct(text);
-  if(!productKey) throw new Error("PROCUREMENT_PRODUCT_NOT_SUPPORTED");
+  const match=matchProcurementProduct(text);
+  const productKey=match.productKey;
+  if(!productKey) throw new Error(match.status==="REVIEW_REQUIRED"?"PROCUREMENT_PRODUCT_REVIEW_REQUIRED":"PROCUREMENT_PRODUCT_NOT_SUPPORTED");
   const product=PROCUREMENT.products.find(p=>p.key===productKey)!;
   const caseMatch=text.match(/(\d+)\s*(?:case|carton|box)/i);
   const cases=caseMatch?Math.max(1,Math.min(50,Number(caseMatch[1]))):1;
@@ -54,7 +103,7 @@ export function parseProcurementRequest(text:string){
   const budgetPaise=budgetMatch?Number(budgetMatch[1].replace(/,/g,""))*100:PROCUREMENT.defaultBudgetPaise;
   const deadlineMatch=text.match(/(?:within|in)\s*(\d+)\s*day/i);
   const deadlineDays=deadlineMatch?Math.max(1,Math.min(14,Number(deadlineMatch[1]))):PROCUREMENT.defaultDeadlineDays;
-  return {productKey,productName:product.name,cases,budgetPaise,deadlineDays,requiresGstInvoice:/gst|invoice/i.test(text)||PROCUREMENT.requiresGstInvoiceByDefault};
+  return {productKey,productName:product.name,matchStatus:match.status,matchReason:match.reason,cases,budgetPaise,deadlineDays,requiresGstInvoice:/gst|invoice/i.test(text)||PROCUREMENT.requiresGstInvoiceByDefault};
 }
 
 function economicLanded(productGrossPaise:number,productGstRate:string,shippingGrossPaise:number){
@@ -70,9 +119,10 @@ export function currentUsualCost(productKey:string,cases:number){
   return listing.gross_case_price_paise*cases+listing.shipping_paise;
 }
 
-export function compareConnectedSuppliers(input:{productKey:string;cases:number;budgetPaise:number;deadlineDays:number;requiresGstInvoice:boolean}){
+export function compareConnectedSuppliers(input:{productKey:string;cases:number;budgetPaise:number;deadlineDays:number;requiresGstInvoice:boolean},merchantId:string=DEMO.merchantId){
   const product=PROCUREMENT.products.find(p=>p.key===input.productKey);
   if(!product) throw new Error("PROCUREMENT_PRODUCT_NOT_SUPPORTED");
+  const spendLimit=getProcurementPolicy(merchantId).autonomous_spend_limit_paise;
   const usual=currentUsualCost(input.productKey,input.cases);
   const rows=db.prepare(`SELECT l.*,s.name,s.verification_state,s.gst_invoice_enabled,s.reliability_score,s.eta_days,s.role FROM supplier_listings l JOIN connected_suppliers s ON s.id=l.supplier_id WHERE l.product_key=?`).all(input.productKey) as Array<ListingRow&SupplierRow>;
   const options:ProcurementOption[]=rows.map(row=>{
@@ -84,7 +134,7 @@ export function compareConnectedSuppliers(input:{productKey:string;cases:number;
     const deliveryPass=row.eta_days<=input.deadlineDays;
     const gstPass=!input.requiresGstInvoice||Boolean(row.gst_invoice_enabled);
     const supplierPass=row.verification_state==="VERIFIED";
-    const spendApproval=gross>PROCUREMENT.autonomousSpendLimitPaise;
+    const spendApproval=gross>spendLimit;
     const hardPass=inventoryPass&&budgetPass&&deliveryPass&&gstPass&&supplierPass;
     const policyResult:ProcurementOption["policyResult"]=!hardPass?"BLOCK":spendApproval?"APPROVAL_REQUIRED":"ALLOW";
     return {
@@ -100,9 +150,30 @@ export function compareConnectedSuppliers(input:{productKey:string;cases:number;
   }).map((o,i)=>({...o,rank:i+1}));
 }
 
+export function optimizeProcurementBasket(lines:Array<{productKey:string;cases:number}>,merchantId:string=DEMO.merchantId){
+  if(!lines.length||lines.length>20)throw new Error("PROCUREMENT_BASKET_SIZE_INVALID");
+  const planned=lines.map(line=>{
+    if(!Number.isSafeInteger(line.cases)||line.cases<=0||line.cases>50)throw new Error("PROCUREMENT_BASKET_QUANTITY_INVALID");
+    const product=PROCUREMENT.products.find(item=>item.key===line.productKey);
+    if(!product)throw new Error("PROCUREMENT_PRODUCT_NOT_SUPPORTED");
+    const options=compareConnectedSuppliers({productKey:line.productKey,cases:line.cases,budgetPaise:Number.MAX_SAFE_INTEGER,deadlineDays:7,requiresGstInvoice:true},merchantId);
+    const selected=options.find(option=>option.policyResult==="ALLOW")??options.find(option=>option.policyResult==="APPROVAL_REQUIRED")??null;
+    if(!selected)throw new Error("PROCUREMENT_BASKET_LINE_BLOCKED");
+    return {productKey:line.productKey,productName:product.name,cases:line.cases,usualCostPaise:currentUsualCost(line.productKey,line.cases),selected};
+  });
+  const usualCostPaise=planned.reduce((sum,line)=>sum+line.usualCostPaise,0);
+  const optimizedCostPaise=planned.reduce((sum,line)=>sum+line.selected.grossPayablePaise,0);
+  const economicLandedPaise=planned.reduce((sum,line)=>sum+line.selected.economicLandedPaise,0);
+  const supplierAllocation=[...new Set(planned.map(line=>line.selected.supplierName))];
+  const policyResult=optimizedCostPaise>getProcurementPolicy(merchantId).autonomous_spend_limit_paise||planned.some(line=>line.selected.policyResult==="APPROVAL_REQUIRED")?"APPROVAL_REQUIRED":"ALLOW";
+  const result={lines:planned,usualCostPaise,optimizedCostPaise,economicLandedPaise,savingsPaise:Math.max(0,usualCostPaise-optimizedCostPaise),supplierAllocation,policyResult};
+  audit({eventType:"PROCUREMENT_BASKET_OPTIMIZED",actor:"RAZORPROCURE",severity:policyResult==="ALLOW"?"SUCCESS":"WARN",detail:`Optimized ${planned.length} basket lines across ${supplierAllocation.length} supplier(s) against the complete usual-supplier basket.`,metadata:{usualCostPaise,optimizedCostPaise,economicLandedPaise,savingsPaise:result.savingsPaise,supplierAllocation,policyResult}});
+  return result;
+}
+
 export function createProcurementRun(text:string,merchantId:string){
   const parsed=parseProcurementRequest(text);
-  const options=compareConnectedSuppliers(parsed);
+  const options=compareConnectedSuppliers(parsed,merchantId);
   const recommended=options.find(o=>o.policyResult==="ALLOW")??options.find(o=>o.policyResult==="APPROVAL_REQUIRED")??null;
   const runId=id("prun");
   const usual=currentUsualCost(parsed.productKey,parsed.cases);
@@ -137,7 +208,7 @@ export function revalidateProcurementRun(runId:string,merchantId:string){
     budgetPaise:Number(loaded.run.budget_paise),
     deadlineDays:Number(loaded.run.deadline_days),
     requiresGstInvoice:true
-  });
+  },merchantId);
   const fresh=current.find(o=>o.listingId===loaded.selected!.listingId);
   if(!fresh||fresh.policyResult!=="ALLOW") throw new Error("PROCUREMENT_PLAN_NO_LONGER_SAFE");
   if(fresh.grossPayablePaise!==loaded.selected.grossPayablePaise) throw new Error("PROCUREMENT_PRICE_CHANGED_RECOMPARE");
@@ -218,7 +289,7 @@ export function procurementOverview(merchantId:string){
     const due=avgDays?new Date(new Date(latest.purchased_at).getTime()+avgDays*86400000):null;
     const daysUntil=due?Math.ceil((due.getTime()-Date.now())/86400000):null;
     const supported=PROCUREMENT.products.some(p=>p.key===key);
-    const options=supported?compareConnectedSuppliers({productKey:key,cases:1,budgetPaise:Number.MAX_SAFE_INTEGER,deadlineDays:7,requiresGstInvoice:true}):[];
+    const options=supported?compareConnectedSuppliers({productKey:key,cases:1,budgetPaise:Number.MAX_SAFE_INTEGER,deadlineDays:7,requiresGstInvoice:true},merchantId):[];
     const best=options.find(o=>o.policyResult==="ALLOW")??null;
     const usual=supported?currentUsualCost(key,1):0;
     return {productKey:key,productName:latest.product_name,lastSupplier:latest.supplier_name,lastPurchasedAt:latest.purchased_at,avgReorderDays:avgDays,daysUntilReorder:daysUntil,bestSavingPaise:best?Math.max(0,usual-best.grossPayablePaise):0,bestSupplier:best?.supplierName??null};
@@ -236,12 +307,18 @@ export function saveExtractedInvoice(merchantId:string,input:{supplierName:strin
   let accepted=0;
   db.transaction(()=>{
     for(const [index,item] of input.items.entries()){
+      const rawAmount=String(item.grossLineAmount).trim();
+      const rawGst=String(item.gstRatePercent??0).trim();
+      if(!Number.isSafeInteger(item.quantity)||item.quantity<=0||item.quantity>100000) continue;
+      if(!/^\d+(?:\.\d{1,2})?$/.test(rawAmount)||!/^\d+(?:\.\d{1,4})?$/.test(rawGst)) continue;
       const identityText=`${item.productName} ${item.brand??""} ${item.pack??""}`;
       const productKey=normalizeProcurementProduct(identityText)??unmatchedProductKey(identityText);
-      const paiseDecimal=new Decimal(String(item.grossLineAmount)).mul(100).toDecimalPlaces(0,Decimal.ROUND_HALF_UP);
+      const paiseDecimal=new Decimal(rawAmount).mul(100).toDecimalPlaces(0,Decimal.ROUND_HALF_UP);
       const paise=paiseDecimal.toNumber();
       if(!Number.isSafeInteger(paise)||paise<=0) continue;
-      const gstRate=new Decimal(String(item.gstRatePercent??0)).div(100).toDecimalPlaces(6,Decimal.ROUND_HALF_UP).toString();
+      const gstPercent=new Decimal(rawGst);
+      if(gstPercent.isNegative()||gstPercent.greaterThan(100)) continue;
+      const gstRate=gstPercent.div(100).toDecimalPlaces(6,Decimal.ROUND_HALF_UP).toString();
       accepted++;
       const lineId=sourceHash?`invoice_${sourceHash}_${index}`:id("pline");
       inserted+=stmt.run(lineId,merchantId,sourceName,input.supplierName,date,productKey,item.productName,item.brand??"",item.pack??"",item.quantity,paise,gstRate,new Date().toISOString()).changes;

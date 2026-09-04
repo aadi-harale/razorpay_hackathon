@@ -10,6 +10,7 @@ call npm run typecheck || goto :fail
 call npm run lint || goto :fail
 call npm run test || goto :fail
 call npm run build || goto :fail
+call npm audit --audit-level=high || goto :fail
 echo.
 echo ALL RELEASE GATES PASSED.
 exit /b 0

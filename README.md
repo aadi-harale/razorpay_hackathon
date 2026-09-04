@@ -14,7 +14,7 @@
   <a href="#-five-minute-demo"><img alt="Demo ready" src="https://img.shields.io/badge/DEMO-READY-32D583?style=for-the-badge" /></a>
   <a href="#-the-trust-model"><img alt="ShadowFunnel protected" src="https://img.shields.io/badge/SHADOWFUNNEL-PROTECTED-7C6CFF?style=for-the-badge" /></a>
   <img alt="Account free payments" src="https://img.shields.io/badge/PAYMENTS-DUMMY_ONLY-18B6A4?style=for-the-badge" />
-  <a href="#-validation"><img alt="41 tests passing" src="https://img.shields.io/badge/TESTS-41_PASSING-20B2AA?style=for-the-badge" /></a>
+  <a href="#-validation"><img alt="51 tests passing" src="https://img.shields.io/badge/TESTS-51_PASSING-20B2AA?style=for-the-badge" /></a>
   <a href="./LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/LICENSE-MIT-5B6CFF?style=for-the-badge" /></a>
 </p>
 
@@ -83,20 +83,21 @@ flowchart LR
 
 ## 🎬 Five-minute demo
 
-Start at `http://localhost:3100`, sign in, and follow this exact path:
+Run `start.bat`, open the exact URL it prints, sign in, and follow this path:
 
 | Time | Click | What to say |
 |---:|---|---|
 | **0:00** | **Home → Try demo invoice** | “RazorProcure turns an invoice into three structured line items without a network dependency. Repeating it is idempotent.” |
 | **0:40** | **Purchase Memory** | “The agent now understands what this retailer buys—not just what is in one cart.” |
-| **1:10** | **Smart Buy → Example 1 → Compare & optimize** | “We compare connected suppliers using true landed cost, then expose every decision before money moves.” |
-| **2:00** | **Safety Demo → Check request → Run full demo** | “ShadowFunnel deterministically checks policy, inventory, evidence, and spend. The LLM cannot bypass these gates.” |
-| **2:50** | **Safety Demo → Reset → Inventory race** | “Two buyers compete for the last stock. Exactly one reserves it; the other is safely blocked.” |
-| **3:30** | **Safety Demo → Merchant Truth → Try demo certificate** | “Supplier evidence is checksum-bound and verified as current—not accepted on model confidence.” |
-| **4:05** | **Savings Insights → Run paired replay** | “The same 50 intents run through baseline and guarded paths, making the safety and savings claim reproducible.” |
+| **1:10** | **Smart Buy → Example 1 → Compare & optimize → Approve demo purchase** | “We compare connected suppliers using true landed cost, then expose every decision before a local dummy payment commits stock.” |
+| **1:45** | **Smart Buy → Optimize 3-item basket** | “The optimizer allocates the complete basket across two suppliers and compares the result with the full usual-supplier basket.” |
+| **2:10** | **Smart Buy → Open safety demo → Run full demo** | “ShadowFunnel deterministically checks policy, inventory, evidence, and spend. The LLM cannot bypass these gates.” |
+| **3:00** | **Reset → Inventory race** | “One atomic claim wins; the loser is replanned and payment remains blocked until the revised mandate is approved.” |
+| **3:35** | **Merchant Truth → Try demo certificate** | “Supplier evidence is checksum-bound and verified as current—not accepted on model confidence.” |
+| **4:05** | **Savings Insights → Run paired replay** | “The same intents run through baseline and guarded paths, making the safety and savings claim reproducible.” |
 | **4:40** | **Audit** | “Every recommendation, block, reservation, checkout, and outcome is explainable after the fact.” |
 
-To show payment safely, return to **Safety Demo**, run the full demo, and click **Simulate payment**. The server completes the dummy transaction, commits the reservation, and writes the audit event without contacting an external provider.
+To show payment safely, return to **Smart Buy**, run the full demo, and click **Simulate payment**. The server completes the dummy transaction, commits the reservation, and writes the audit event without contacting an external provider.
 
 ## 🧠 The trust model
 
@@ -153,7 +154,7 @@ Important code and design notes live in [`docs/ARCHITECTURE.md`](./docs/ARCHITEC
 
 1. Install **Node.js 22+**.
 2. Double-click **`configure.bat`** to create local authentication secrets and optionally add OpenRouter credentials.
-3. Double-click **`start.bat`**. It installs pinned dependencies, builds production, stops conflicting RazorProcure processes, and opens `http://localhost:3100`.
+3. Double-click **`start.bat`**. It installs pinned dependencies, builds production, stops only its previously recorded RazorProcure process, selects a free port from 3100–3199, and opens the exact URL.
 4. Run **`show-login.bat`** to display the generated single-user credentials.
 5. Use **`stop.bat`** when finished; it stops only RazorProcure.
 
@@ -216,12 +217,12 @@ The current verified baseline is:
 
 - TypeScript: clean
 - ESLint: clean
-- Vitest: **41/41 tests passing** across 13 test files
+- Vitest: **51/51 tests passing** across 15 test files
 - Next.js production build: successful
 - Dependency audit: **0 known vulnerabilities**
 - Secret scan: clean
 
-On Windows, `verify.bat` runs the same sequence. Runtime smoke checks also cover preflight, the complete flagship flow, the inventory race, replay, evidence verification, invoice idempotency, agent endpoints, and cross-origin protection.
+On Windows, `verify.bat` runs the same static release gate. With the app running, `npm run smoke` covers authenticated invoice import, full-basket optimization, the flagship flow, dummy checkout, the inventory race with replan, replay and audit.
 
 ## ☁️ Deployment note
 
@@ -234,6 +235,10 @@ See [`docs/VERCEL_DEPLOYMENT.md`](./docs/VERCEL_DEPLOYMENT.md) for the exact bou
 - [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — system design and trust boundaries
 - [`docs/API.md`](./docs/API.md) — integration surface for external agents
 - [`docs/DEMO_SCRIPT.md`](./docs/DEMO_SCRIPT.md) — extended presentation script
+- [`docs/DATA_MODEL.md`](./docs/DATA_MODEL.md) — persisted entities and invariants
+- [`docs/OPERATIONS.md`](./docs/OPERATIONS.md) — launch, recovery and payment modes
+- [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) — safe public deployment and production boundary
+- [`docs/TEST_MATRIX.md`](./docs/TEST_MATRIX.md) — executable acceptance evidence
 - [`SECURITY.md`](./SECURITY.md) — threat model and controls
 - [`VALIDATION.md`](./VALIDATION.md) — release evidence and commands
 

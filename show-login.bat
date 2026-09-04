@@ -9,5 +9,9 @@ if not exist .env.local (
 echo.
 echo RazorProcure local credentials
 echo ------------------------------
-powershell -NoProfile -Command "$p='.env.local'; $email=((Get-Content $p | Where-Object { $_ -match '^DEMO_EMAIL=' } | Select-Object -First 1) -replace '^DEMO_EMAIL=','').Trim('"'); $pw=((Get-Content $p | Where-Object { $_ -match '^DEMO_PASSWORD=' } | Select-Object -First 1) -replace '^DEMO_PASSWORD=','').Trim('"'); Write-Host ('Email: ' + $email); Write-Host ('Password: ' + $pw)"
+powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\show-login.ps1"
+if errorlevel 1 (
+  if /I not "%~1"=="/nopause" pause
+  exit /b 1
+)
 if /I not "%~1"=="/nopause" pause

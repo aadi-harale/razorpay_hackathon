@@ -294,6 +294,14 @@ init();
 
 function initProcurementSchema() {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS merchant_procurement_policy (
+      merchant_id TEXT PRIMARY KEY,
+      autonomous_spend_limit_paise INTEGER NOT NULL CHECK(autonomous_spend_limit_paise BETWEEN 100000 AND 100000000),
+      version INTEGER NOT NULL DEFAULT 1 CHECK(version > 0),
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (merchant_id) REFERENCES merchants(id)
+    );
+
     CREATE TABLE IF NOT EXISTS connected_suppliers (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -439,6 +447,7 @@ seedCoreData();
 
 function seedProcurementData() {
   const now = new Date().toISOString();
+  db.prepare(`INSERT OR IGNORE INTO merchant_procurement_policy(merchant_id,autonomous_spend_limit_paise,version,updated_at) VALUES(?,?,1,?)`).run(DEMO.merchantId,PROCUREMENT.autonomousSpendLimitPaise,now);
   const supplier = db.prepare(`INSERT OR IGNORE INTO connected_suppliers(id,name,verification_state,gst_invoice_enabled,reliability_score,eta_days,role,connected,created_at) VALUES(?,?,?,?,?,?,?,?,?)`);
   for (const s of PROCUREMENT.suppliers) supplier.run(s.id,s.name,s.verification,s.gstInvoice?1:0,s.reliability,s.etaDays,s.role,1,now);
   const listing = db.prepare(`INSERT OR IGNORE INTO supplier_listings(id,supplier_id,product_key,title,gross_case_price_paise,gst_rate,available_cases,reserved_cases,min_cases,shipping_paise,updated_at) VALUES(?,?,?,?,?,?,?,0,?,?,?)`);

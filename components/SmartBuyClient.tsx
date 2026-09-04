@@ -1,14 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, BadgeIndianRupee, Check, CheckCircle2, CircleAlert, CreditCard, Loader2, PackageCheck, ReceiptText, Search, ShieldCheck, ShoppingCart, Sparkles, Store, Truck, X } from "lucide-react";
+import { ArrowRight, BadgeIndianRupee, Boxes, Check, CheckCircle2, CircleAlert, CreditCard, Loader2, PackageCheck, ReceiptText, Search, ShieldCheck, ShoppingCart, Sparkles, Store, Truck, X } from "lucide-react";
 
 type CheckState="PASS"|"FAIL"|"APPROVAL";
 type Option={
   listingId:string;supplierId:string;supplierName:string;supplierRole:string;listingTitle:string;verification:string;reliability:number;gstInvoice:boolean;etaDays:number;casePricePaise:number;shippingPaise:number;grossPayablePaise:number;economicLandedPaise:number;savingsVsUsualPaise:number;availableCases:number;exactMatch:boolean;policyResult:"ALLOW"|"APPROVAL_REQUIRED"|"BLOCK";rank:number;
   checks:{budget:CheckState;delivery:CheckState;inventory:CheckState;gstInvoice:CheckState;supplier:CheckState;spendLimit:CheckState};
 };
-type Run={runId:string;parsed:{productKey:string;productName:string;cases:number;budgetPaise:number;deadlineDays:number;requiresGstInvoice:boolean};usualCostPaise:number;recommended:Option|null;options:Option[];authority:string};
+type Run={runId:string;parsed:{productKey:string;productName:string;matchStatus:"EXACT"|"HIGH_CONFIDENCE";matchReason:string;cases:number;budgetPaise:number;deadlineDays:number;requiresGstInvoice:boolean};usualCostPaise:number;recommended:Option|null;options:Option[];authority:string};
+type Basket={lines:Array<{productKey:string;productName:string;cases:number;usualCostPaise:number;selected:Option}>;usualCostPaise:number;optimizedCostPaise:number;economicLandedPaise:number;savingsPaise:number;supplierAllocation:string[];policyResult:"ALLOW"|"APPROVAL_REQUIRED"};
 
 declare global { interface Window { Razorpay?: new(options:Record<string,unknown>)=>{open:()=>void}; } }
 
@@ -37,6 +38,8 @@ export function SmartBuyClient(){
   const [paying,setPaying]=useState(false);
   const [error,setError]=useState("");
   const [paid,setPaid]=useState<{paymentId:string;supplier:string;demo:boolean}|null>(null);
+  const [basket,setBasket]=useState<Basket|null>(null);
+  const [basketBusy,setBasketBusy]=useState(false);
 
   const best=run?.recommended??null;
   const savePct=useMemo(()=>best&&run?.usualCostPaise?Math.max(0,(best.savingsVsUsualPaise/run.usualCostPaise)*100):0,[best,run]);
@@ -79,6 +82,18 @@ export function SmartBuyClient(){
     }catch(e){setPaying(false);setError(e instanceof Error?e.message:"Checkout failed");}
   }
 
+  async function optimizeBasket(){
+    setBasketBusy(true);setError("");setBasket(null);
+    try{
+      const r=await fetch("/api/procurement/basket",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({lines:[
+        {productKey:"fortune-sunflower-oil-1l-case48",cases:20},
+        {productKey:"maggi-masala-70g-case96",cases:1},
+        {productKey:"surf-excel-matic-1kg-case24",cases:1}
+      ]})});
+      const j=await r.json();if(!r.ok)throw new Error(j.error||"Basket optimization failed");setBasket(j);
+    }catch(e){setError(e instanceof Error?e.message:"Basket optimization failed");}finally{setBasketBusy(false);}
+  }
+
   return <>
     <section className="rp-buy-hero">
       <div className="rp-buy-title"><div className="rp-kicker"><Sparkles size={18}/> SMART BUY</div><h1>Tell us what you need.<br/><span>We find the smartest way to buy it.</span></h1><p>Connected suppliers are compared on landed cost, stock, delivery, GST and your spend policy.</p></div>
@@ -87,8 +102,15 @@ export function SmartBuyClient(){
 
     <section className="rp-query-card">
       <div className="rp-query-input"><Search size={23}/><textarea value={text} onChange={e=>setText(e.target.value)} rows={2} aria-label="Procurement request"/><button className="rp-btn primary big" onClick={compare} disabled={busy}>{busy?<Loader2 className="spin" size={20}/>:<><Sparkles size={20}/> Compare & optimize</>}</button></div>
-      <div className="rp-chips">{suggestions.map((s,i)=><button key={i} onClick={()=>setText(s)}>Example {i+1}</button>)}</div>
+      <div className="rp-chips">{suggestions.map((s,i)=><button key={i} onClick={()=>setText(s)}>Example {i+1}</button>)}<button onClick={optimizeBasket} disabled={basketBusy}>{basketBusy?"Optimizing…":"Optimize 3-item basket"}</button><a href="/demo-lab">Open safety demo <ArrowRight size={14}/></a></div>
     </section>
+
+    {basket&&<section className="rp-plan-panel rp-basket-panel">
+      <div className="rp-panel-head"><div><span>FULL-BASKET OPTIMIZATION</span><h2>Best safe supplier allocation</h2></div><div className="rp-request-badge"><Boxes size={15}/> {basket.supplierAllocation.length} suppliers</div></div>
+      <div className="rp-request-grid"><div><span>Usual basket</span><strong>{inr(basket.usualCostPaise)}</strong></div><div><span>Optimized basket</span><strong>{inr(basket.optimizedCostPaise)}</strong></div><div><span>Total savings</span><strong>{inr(basket.savingsPaise)}</strong></div><div><span>Spend policy</span><strong>{basket.policyResult.replace("_"," ")}</strong></div></div>
+      <div className="rp-options-list">{basket.lines.map(line=><div className="rp-supplier-card winner" key={line.productKey}><div className="rp-supplier-rank"><Check size={18}/></div><div className="rp-supplier-main"><div className="rp-supplier-name"><strong>{line.productName}</strong></div><small>{line.cases} case · allocated to {line.selected.supplierName}</small></div><div className="rp-supplier-money"><strong>{inr(line.selected.grossPayablePaise)}</strong><span>usual {inr(line.usualCostPaise)}</span><em>Save {inr(line.selected.savingsVsUsualPaise)}</em></div><div className={`rp-policy-dot ${line.selected.policyResult.toLowerCase()}`}><Check size={16}/></div></div>)}</div>
+      <div className="rp-payment-note"><ShieldCheck size={15}/> Compared against the full current usual-supplier basket. Approval is still required when the aggregate spend exceeds policy.</div>
+    </section>}
 
     {busy&&<section className="rp-live-processing">
       <div className="rp-process-step active"><Search/><span>Matching products</span></div><i/><div className="rp-process-step active"><Store/><span>Checking suppliers</span></div><i/><div className="rp-process-step active"><BadgeIndianRupee/><span>Calculating landed cost</span></div><i/><div className="rp-process-step active"><ShieldCheck/><span>Applying policy</span></div>
@@ -100,7 +122,7 @@ export function SmartBuyClient(){
     {run&&<div className="rp-buy-layout">
       <section className="rp-plan-panel">
         <div className="rp-panel-head"><div><span>YOUR REQUEST</span><h2>{run.parsed.productName}</h2></div><div className="rp-request-badge">{run.parsed.cases} case{run.parsed.cases===1?"":"s"}</div></div>
-        <div className="rp-request-grid"><div><span>Budget</span><strong>{inr(run.parsed.budgetPaise)}</strong></div><div><span>Need by</span><strong>{run.parsed.deadlineDays} days</strong></div><div><span>GST invoice</span><strong>Required</strong></div><div><span>Compared</span><strong>{run.options.length} suppliers</strong></div></div>
+        <div className="rp-request-grid"><div><span>Budget</span><strong>{inr(run.parsed.budgetPaise)}</strong></div><div><span>Need by</span><strong>{run.parsed.deadlineDays} days</strong></div><div><span>Product match</span><strong>{run.parsed.matchStatus.replace("_"," ")}</strong></div><div><span>Compared</span><strong>{run.options.length} suppliers</strong></div></div>
         <div className="rp-options-list">{run.options.map((o,idx)=><div key={o.listingId} className={`rp-supplier-card ${best?.listingId===o.listingId?"winner":""} ${o.policyResult.toLowerCase()}`}>
           <div className="rp-supplier-rank">{best?.listingId===o.listingId?<Sparkles size={18}/>:String(idx+1).padStart(2,"0")}</div>
           <div className="rp-supplier-main"><div className="rp-supplier-name"><strong>{o.supplierName}</strong>{o.supplierRole==="USUAL"&&<span>Usual</span>}{best?.listingId===o.listingId&&<b>Best safe option</b>}</div><small>{o.listingTitle}</small><div className="rp-check-row"><span className={o.checks.inventory==="PASS"?"ok":"bad"}><StateIcon state={o.checks.inventory}/> Stock</span><span className={o.checks.delivery==="PASS"?"ok":"bad"}><StateIcon state={o.checks.delivery}/> {o.etaDays}d</span><span className={o.checks.gstInvoice==="PASS"?"ok":"bad"}><StateIcon state={o.checks.gstInvoice}/> GST</span><span className={o.checks.spendLimit==="PASS"?"ok":"warn"}><StateIcon state={o.checks.spendLimit}/> Policy</span></div></div>

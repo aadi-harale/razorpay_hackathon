@@ -118,7 +118,14 @@ export function runReservationRace() {
   const offerB = `raceB_${randomUUID()}`;
   const a = reserveInventory({ offerId: offerA, sku: DEMO.sku, locationId: DEMO.locations.edge.id, qty: 20 });
   const b = reserveInventory({ offerId: offerB, sku: DEMO.sku, locationId: DEMO.locations.edge.id, qty: 20 });
+  const fallback = buildCandidates().baseline;
   audit({ eventType: "RESERVATION_RACE", actor: "INVENTORY_ENGINE", severity: "WARN", detail: "Two 20-unit buyers contended for 24 units at WH-PNQ-EDGE; atomic reservation allowed exactly one.", metadata: { firstSucceeded: Boolean(a), secondSucceeded: Boolean(b) } });
+  if (!b) audit({ eventType: "RESERVATION_REPLAN", actor: "SHADOWFUNNEL", severity: "WARN", detail: "The losing buyer was replanned to central fulfilment. That route has stock but exceeds the buyer mandate, so payment remains blocked pending explicit buyer approval.", metadata: { route: DEMO.locations.central.id, grossPayablePaise: fallback.accounting.grossCustomerPayablePaise, policyResult: "APPROVAL_REQUIRED", paymentCreated: false } });
   const edge = (inventorySnapshot() as Array<{ location_id:string; available_qty:number }>).find((row) => row.location_id === DEMO.locations.edge.id);
-  return { first: a ? "RESERVED" : "BLOCKED", second: b ? "RESERVED" : "BLOCKED", remainingAvailable: Number(edge?.available_qty ?? 0) };
+  return {
+    first: a ? "RESERVED" : "BLOCKED",
+    second: b ? "RESERVED" : "BLOCKED",
+    remainingAvailable: Number(edge?.available_qty ?? 0),
+    replan: b ? null : { route: DEMO.locations.central.id, grossPayablePaise: fallback.accounting.grossCustomerPayablePaise, decision: "APPROVAL_REQUIRED", reason: "Central stock is available, but the final payable exceeds the buyer's ₹8,000 mandate. No payment was created." }
+  };
 }

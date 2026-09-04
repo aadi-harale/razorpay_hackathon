@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Beaker, BrainCircuit, ClipboardList, CreditCard, LayoutDashboard, LogOut, PackageSearch, Settings2, ShieldCheck, ShoppingBag, Sparkles, Store, Zap } from "lucide-react";
+import { BrainCircuit, ClipboardList, CreditCard, LayoutDashboard, LogOut, PackageSearch, Settings2, ShieldCheck, ShoppingBag, Sparkles, Store, Zap } from "lucide-react";
 import { MerchantSetupDrawer } from "@/components/MerchantSetupDrawer";
 
 const nav=[
@@ -11,7 +11,6 @@ const nav=[
   {href:"/funnel",label:"Purchase Memory",hint:"What your business buys",icon:BrainCircuit},
   {href:"/live-buyer",label:"Smart Buy",hint:"Compare, approve & pay",icon:ShoppingBag},
   {href:"/opportunities",label:"Savings Insights",hint:"What to change next",icon:Sparkles},
-  {href:"/demo-lab",label:"Safety Demo",hint:"Trace, evidence + race",icon:Beaker},
   {href:"/audit",label:"Audit",hint:"Every decision explained",icon:ClipboardList}
 ];
 

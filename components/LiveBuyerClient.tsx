@@ -15,7 +15,7 @@ type Candidate = {
 type Step = { id:string; event:string; title:string; detail:string; state:"success"|"warning"|"danger"|"neutral"; timestamp:string };
 type EvidenceView = { fsc: { source:string; validFrom?:string; validUntil?:string; scope?:string }; gst: { source?:string } };
 type DemoResult = { offerId:string; steps:Step[]; candidates:{baseline:Candidate;minimumDiscount:Candidate;threePercent:Candidate;edge:Candidate}; evidence:EvidenceView; constraints:unknown[] };
-type RaceResult = { first:"RESERVED"|"BLOCKED"; second:"RESERVED"|"BLOCKED"; remainingAvailable:number };
+type RaceResult = { first:"RESERVED"|"BLOCKED"; second:"RESERVED"|"BLOCKED"; remainingAvailable:number; replan:null|{route:string;grossPayablePaise:number;decision:"APPROVAL_REQUIRED";reason:string} };
 type RazorpayResponse = { razorpay_payment_id:string; razorpay_order_id:string; razorpay_signature:string };
 type Preflight = { intent:{quantity:number;budgetMaxPaise:number;destination:string;hardRequirements:string[]}; evaluation:{decision:string;recommended:null|{route:string;label:string;finalPayablePaise:number;contributionMargin:string;availableQty:number};hardFailures:string[];candidates:Array<{route:string;label:string;finalPayablePaise:number;contributionMargin:string;availableQty:number;offerable:boolean}>} };
 
@@ -149,6 +149,7 @@ export function LiveBuyerClient() {
         <div className={`race-lane ${race.second==="RESERVED"?"win":"lose"}`}><span>BUYER B</span><div><strong>{race.second}</strong><small>20 × BX-104 · Pune</small></div>{race.second==="RESERVED"?<Check size={21}/>:<X size={21}/>}</div>
       </div>
       <div className="race-result"><div><span>Available</span><strong>{race.remainingAvailable} units</strong></div><div><span>Second payment</span><strong>NOT CREATED</strong></div><div><span>Oversell</span><strong>PREVENTED</strong></div></div>
+      {race.replan&&<div className="safety-alert"><AlertTriangle size={20}/><div><strong>Buyer B replanned to {race.replan.route} · {inr(race.replan.grossPayablePaise)}</strong><p>{race.replan.reason}</p></div><span>{race.replan.decision}</span></div>}
     </section>}
 
     <div id="merchant-truth"><EvidenceUploadCard /></div>
