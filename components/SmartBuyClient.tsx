@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, BadgeIndianRupee, Boxes, Check, CheckCircle2, CircleAlert, CreditCard, Loader2, PackageCheck, ReceiptText, Search, ShieldAlert, ShieldCheck, ShoppingCart, Sparkles, Store, Truck, X } from "lucide-react";
+import { ArrowRight, BadgeIndianRupee, Boxes, Check, CheckCircle2, CircleAlert, CreditCard, Gauge, Loader2, PackageCheck, ReceiptText, Route, Search, ShieldAlert, ShieldCheck, ShoppingCart, Sparkles, Store, Truck, X, Zap } from "lucide-react";
 
 type CheckState="PASS"|"FAIL"|"APPROVAL";
 type Option={
@@ -11,6 +11,7 @@ type Option={
 type Run={runId:string;parsed:{productKey:string;productName:string;matchStatus:"EXACT"|"HIGH_CONFIDENCE";matchReason:string;cases:number;budgetPaise:number;deadlineDays:number;requiresGstInvoice:boolean};usualCostPaise:number;recommended:Option|null;options:Option[];authority:string};
 type Basket={lines:Array<{productKey:string;productName:string;cases:number;usualCostPaise:number;selected:Option}>;usualCostPaise:number;optimizedCostPaise:number;economicLandedPaise:number;savingsPaise:number;supplierAllocation:string[];policyResult:"ALLOW"|"APPROVAL_REQUIRED"};
 type ReceivingResult={status:"MATCHED"|"EXCEPTION_BLOCKED";checks:{purchaseOrder:"PASS";receipt:"PASS"|"FAIL";invoice:"PASS"|"FAIL"};quantityVarianceCases:number;invoiceVariancePaise:number;protectedValuePaise:number;exceptions:string[]};
+type ResilienceResult={resilienceScore:number;grade:"RESILIENT"|"GUARDED"|"FRAGILE";baseline:{supplierName:string;payablePaise:number;reliability:number};autonomyEnvelope:{safe:number;approvals:number;blocked:number;total:number};preClearedFallback:{supplierName:string;payablePaise:number;deltaPaise:number}|null;downsideAvoidedPaise:number;scenarios:Array<{id:string;title:string;trigger:string;outcome:"STABLE"|"SWITCH"|"APPROVAL_REQUIRED"|"BLOCKED";supplierName:string|null;payablePaise:number|null;deltaPaise:number|null;protectedValuePaise:number;reason:string}>};
 
 declare global { interface Window { Razorpay?: new(options:Record<string,unknown>)=>{open:()=>void}; } }
 
@@ -42,12 +43,13 @@ export function SmartBuyClient(){
   const [basket,setBasket]=useState<Basket|null>(null);
   const [basketBusy,setBasketBusy]=useState(false);
   const [receiving,setReceiving]=useState(false);const [receivingResult,setReceivingResult]=useState<ReceivingResult|null>(null);
+  const [twinBusy,setTwinBusy]=useState(false);const [twin,setTwin]=useState<ResilienceResult|null>(null);
 
   const best=run?.recommended??null;
   const savePct=useMemo(()=>best&&run?.usualCostPaise?Math.max(0,(best.savingsVsUsualPaise/run.usualCostPaise)*100):0,[best,run]);
 
   async function compare(){
-    setBusy(true);setError("");setPaid(null);setReceivingResult(null);setRun(null);
+    setBusy(true);setError("");setPaid(null);setReceivingResult(null);setTwin(null);setRun(null);
     try{
       const r=await fetch("/api/procurement/compare",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({text})});
       const j=await r.json();if(!r.ok)throw new Error(j.error||"Comparison failed");setRun(j);
@@ -105,6 +107,14 @@ export function SmartBuyClient(){
     }catch(error){setError(error instanceof Error?error.message:"Receiving check failed")}finally{setReceiving(false)}
   }
 
+  async function stressTestPlan(){
+    if(!run)return;setTwinBusy(true);setError("");
+    try{
+      const response=await fetch("/api/procurement/resilience",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({runId:run.runId,text})});
+      const result=await response.json();if(!response.ok)throw new Error(result.error||"Stress test failed");setTwin(result);
+    }catch(error){setError(error instanceof Error?error.message:"Stress test failed")}finally{setTwinBusy(false)}
+  }
+
   return <>
     <section className="rp-buy-hero">
       <div className="rp-buy-title"><div className="rp-kicker"><Sparkles size={18}/> SMART BUY</div><h1>Tell us what you need.<br/><span>We find the smartest way to buy it.</span></h1><p>Connected suppliers are compared on landed cost, stock, delivery, GST and your spend policy.</p></div>
@@ -137,6 +147,13 @@ export function SmartBuyClient(){
       </div>
     </section>}
 
+    {twin&&<section className="rp-twin-panel">
+      <div className="rp-twin-head"><div><div className="rp-kicker"><Zap size={17}/> PROCUREMENT TWIN</div><h2>Stress-tested before payment.</h2><p>Four counterfactuals combine sourcing, policy, inventory and delivery constraints without changing the live plan.</p></div><div className={`rp-twin-score ${twin.grade.toLowerCase()}`}><Gauge/><strong>{twin.resilienceScore}</strong><span>{twin.grade}</span></div></div>
+      <div className="rp-twin-summary"><div><span>Autonomous scenarios</span><strong>{twin.autonomyEnvelope.safe}/{twin.autonomyEnvelope.total}</strong></div><div><span>Need approval</span><strong>{twin.autonomyEnvelope.approvals}</strong></div><div><span>Hard blocked</span><strong>{twin.autonomyEnvelope.blocked}</strong></div><div><span>Downside avoided</span><strong>{inr(twin.downsideAvoidedPaise)}</strong></div></div>
+      {twin.preClearedFallback&&<div className="rp-fallback-strip"><Route/><div><span>PRE-CLEARED FALLBACK</span><strong>{twin.preClearedFallback.supplierName}</strong></div><b>{twin.preClearedFallback.deltaPaise>=0?"+":"−"}{inr(Math.abs(twin.preClearedFallback.deltaPaise))}</b><small>Ready inside current authority</small></div>}
+      <div className="rp-scenario-grid">{twin.scenarios.map(scenario=><article key={scenario.id} className={`rp-scenario-card ${scenario.outcome.toLowerCase()}`}><div><span>{scenario.title}</span><b>{scenario.outcome.replace("_"," ")}</b></div><p>{scenario.trigger}</p><strong>{scenario.supplierName??"No safe supplier"}</strong><small>{scenario.reason}</small>{scenario.payablePaise!==null&&<em>{inr(scenario.payablePaise)}{scenario.deltaPaise!==null&&scenario.deltaPaise!==0?` · ${scenario.deltaPaise>0?"+":"−"}${inr(Math.abs(scenario.deltaPaise))}`:""}</em>}</article>)}</div>
+    </section>}
+
     {run&&<div className="rp-buy-layout">
       <section className="rp-plan-panel">
         <div className="rp-panel-head"><div><span>YOUR REQUEST</span><h2>{run.parsed.productName}</h2></div><div className="rp-request-badge">{run.parsed.cases} case{run.parsed.cases===1?"":"s"}</div></div>
@@ -162,6 +179,7 @@ export function SmartBuyClient(){
             <div className={best.checks.inventory==="PASS"?"pass":"fail"}><PackageCheck/><span>Inventory</span><strong>{best.checks.inventory}</strong></div>
             <div className={best.checks.gstInvoice==="PASS"?"pass":"fail"}><ReceiptText/><span>GST invoice</span><strong>{best.checks.gstInvoice}</strong></div>
           </div>
+          <button className="rp-twin-trigger" onClick={stressTestPlan} disabled={twinBusy}>{twinBusy?<Loader2 className="spin"/>:<Zap/>}{twin?" Re-run Procurement Twin":" Stress-test this plan"}</button>
           <button className={`rp-pay-button ${best.policyResult!=="ALLOW"?"disabled":""}`} onClick={checkout} disabled={paying||best.policyResult!=="ALLOW"}>{paying?<Loader2 className="spin" size={20}/>:<CreditCard size={20}/>} {best.policyResult==="ALLOW"?`Approve demo purchase · ${inr(best.grossPayablePaise)}`:best.policyResult==="APPROVAL_REQUIRED"?"Manual approval required":"No safe purchase"}</button>
           <div className="rp-payment-note"><ShieldCheck size={15}/> Safe simulator · dummy payment only · no external account connected</div>
         </>:<div className="rp-no-plan"><CircleAlert/><strong>No safe option found</strong><span>Change the budget, deadline or supplier requirements.</span></div>}

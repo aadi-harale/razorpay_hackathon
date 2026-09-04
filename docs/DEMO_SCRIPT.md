@@ -12,9 +12,11 @@ Open **Smart Buy** → **Example 1** → **Compare & optimize** → **Approve de
 
 1. Point to true landed cost: item price, GST and delivery are all visible.
 2. Explain that policy, current stock and payable amount are recalculated on the server.
-3. After the dummy purchase completes, click **Test supplier discrepancy**.
-4. Show the invoice check fail, automatic exception hold and **₹250 value protected**.
-5. Optionally click **Verify exact delivery** to show the clean three-way match path.
+3. Click **Stress-test this plan**. Show four disruption scenarios and the pre-cleared fallback supplier.
+4. Explain the novel boundary: it prepares a safe response to a future disruption but never mutates or pays the live order.
+5. Complete the dummy purchase and click **Test supplier discrepancy**.
+6. Show the invoice check fail, automatic exception hold and **₹250 value protected**.
+7. Optionally click **Verify exact delivery** to show the clean three-way match path.
 
 ## 1:35–3:10 — Flagship live buyer
 

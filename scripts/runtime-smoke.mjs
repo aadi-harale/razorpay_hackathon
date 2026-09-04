@@ -39,6 +39,8 @@ if(health.paymentMode==="demo"){
   const requestText="Buy 1 case of Fortune Sunflower Oil 1L x 48 under ₹8,500 within 2 days with GST invoice";
   const comparison=(await call("/api/procurement/compare",{method:"POST",headers:{"content-type":"application/json",origin:base},body:JSON.stringify({text:requestText})})).body;
   expect(comparison.recommended?.policyResult==="ALLOW","Smart Buy recommendation failed");
+  const twin=(await call("/api/procurement/resilience",{method:"POST",headers:{"content-type":"application/json",origin:base},body:JSON.stringify({runId:comparison.runId,text:requestText})})).body;
+  expect(twin.scenarios?.length===4&&twin.preClearedFallback?.supplierName&&twin.autonomyEnvelope?.total===4,"Procurement Twin stress test failed");
   const procurementCheckout=(await call("/api/procurement/checkout/start",{method:"POST",headers:{"content-type":"application/json",origin:base},body:JSON.stringify({runId:comparison.runId,text:requestText})})).body;
   expect(procurementCheckout.status==="PAID"&&procurementCheckout.receiptToken,"Procurement checkout did not issue receiving authority");
   const exactReceipt=(await call("/api/procurement/receive",{method:"POST",headers:{"content-type":"application/json",origin:base},body:JSON.stringify({receiptToken:procurementCheckout.receiptToken,invoiceNumber:`SMOKE-OK-${Date.now()}`,receivedCases:1,invoicedAmountPaise:procurementCheckout.amount})})).body;

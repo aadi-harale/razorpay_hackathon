@@ -16,6 +16,7 @@ All require the authenticated HttpOnly merchant session unless noted.
 | POST | `/api/checkout/start` | revalidate bound offer and create/reuse Razorpay Order |
 | POST | `/api/checkout/verify` | verify Checkout HMAC + fetch/verify payment/order state |
 | POST | `/api/procurement/receive` | reconcile a paid procurement PO, physical receipt and supplier invoice |
+| POST | `/api/procurement/resilience` | stress-test a persisted supplier plan across four deterministic disruption scenarios |
 | GET | `/api/audit` | audit events |
 | POST | `/api/replay/run` | persist isolated/stateful replay |
 | GET | `/api/replay/latest` | latest replay + opportunities |

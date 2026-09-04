@@ -14,7 +14,7 @@
   <a href="#-five-minute-demo"><img alt="Demo ready" src="https://img.shields.io/badge/DEMO-READY-32D583?style=for-the-badge" /></a>
   <a href="#-the-trust-model"><img alt="ShadowFunnel protected" src="https://img.shields.io/badge/SHADOWFUNNEL-PROTECTED-7C6CFF?style=for-the-badge" /></a>
   <img alt="Account free payments" src="https://img.shields.io/badge/PAYMENTS-DUMMY_ONLY-18B6A4?style=for-the-badge" />
-  <a href="#-validation"><img alt="55 tests passing" src="https://img.shields.io/badge/TESTS-55_PASSING-20B2AA?style=for-the-badge" /></a>
+  <a href="#-validation"><img alt="60 tests passing" src="https://img.shields.io/badge/TESTS-60_PASSING-20B2AA?style=for-the-badge" /></a>
   <a href="./LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/LICENSE-MIT-5B6CFF?style=for-the-badge" /></a>
 </p>
 
@@ -58,6 +58,7 @@ Small retailers repeat the same buying work every week: read invoices, remember 
 | **Invoice intelligence** | One-click sample invoice or real image upload | Schema-validated extraction, checksum-bound demo, duplicate-safe import |
 | **Purchase memory** | Recurring products and buying patterns | Durable SQLite history and deterministic normalization |
 | **Smart Buy** | Best connected supplier and savings | Item price + tax + delivery, not a misleading sticker price |
+| **Procurement Twin** | Stress-test the recommendation before paying | Price shock, outage, delay and demand-surge counterfactuals with a pre-cleared fallback |
 | **ShadowFunnel** | A clear pass/block reason before checkout | Budget, GST, delivery, inventory, evidence, and spend gates |
 | **Atomic inventory** | One request wins; overselling is blocked | Transactional reservation with race-safe state transitions |
 | **Account-free payment demo** | One-click simulated purchase | Server-owned amount, deterministic completion, zero external account access |
@@ -91,7 +92,8 @@ Run `start.bat`, open the exact URL it prints, sign in, and follow this path:
 | **0:00** | **Home → Try demo invoice** | “RazorProcure turns an invoice into three structured line items without a network dependency. Repeating it is idempotent.” |
 | **0:40** | **Purchase Memory** | “The agent now understands what this retailer buys—not just what is in one cart.” |
 | **1:10** | **Smart Buy → Example 1 → Compare & optimize → Approve demo purchase** | “We compare connected suppliers using true landed cost, then expose every decision before a local dummy payment commits stock.” |
-| **1:40** | **Delivery discrepancy shield → Test supplier discrepancy** | “A ₹250 invoice overcharge is held automatically because the PO, receipt and invoice do not match. The UI quantifies the value protected.” |
+| **1:35** | **Stress-test this plan** | “The Procurement Twin simulates price shock, supplier outage, delivery slip and doubled demand, then pre-clears the best fallback inside policy.” |
+| **1:55** | **Approve demo purchase → Test supplier discrepancy** | “A ₹250 invoice overcharge is held automatically because the PO, receipt and invoice do not match. The UI quantifies the value protected.” |
 | **2:05** | **Smart Buy → Optimize 3-item basket** | “The optimizer allocates the complete basket across two suppliers and compares the result with the full usual-supplier basket.” |
 | **2:25** | **Smart Buy → Open safety demo → Run full demo** | “ShadowFunnel deterministically checks policy, inventory, evidence, and spend. The LLM cannot bypass these gates.” |
 | **3:00** | **Reset → Inventory race** | “One atomic claim wins; the loser is replanned and payment remains blocked until the revised mandate is approved.” |
@@ -220,12 +222,12 @@ The current verified baseline is:
 
 - TypeScript: clean
 - ESLint: clean
-- Vitest: **55/55 tests passing** across 16 test files
+- Vitest: **60/60 tests passing** across 17 test files
 - Next.js production build: successful
 - Dependency audit: **0 known vulnerabilities**
 - Secret scan: clean
 
-On Windows, `verify.bat` runs the same static release gate. With the app running, `npm run smoke` covers authenticated invoice import, full-basket optimization, both receiving outcomes, the flagship flow, dummy checkout, the inventory race with replan, replay and audit.
+On Windows, `verify.bat` runs the same static release gate. With the app running, `npm run smoke` covers authenticated invoice import, full-basket optimization, Procurement Twin counterfactuals, both receiving outcomes, the flagship flow, dummy checkout, the inventory race with replan, replay and audit.
 
 ## ☁️ Deployment note
 

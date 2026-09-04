@@ -10,6 +10,7 @@ The browser and LLM are untrusted. They can request or extract data, but cannot 
 - `app/`: UI and server routes
 - `components/`: merchant-facing workflow UI
 - `lib/procurement.ts`: supplier comparison, plan revalidation, reservations, purchase memory
+- `lib/resilience.ts`: non-mutating counterfactual price, outage, delivery and demand stress tests
 - `lib/engines/`: accounting, constraints, evidence, policy
 - `lib/razorpay.ts`: Razorpay client + cryptographic verification
 - `lib/db.ts`: local SQLite schema/seed

@@ -11,6 +11,7 @@ The canonical release command is `npm run verify`. Do not convert `NOT VERIFIED`
 | Invoice ingestion | `tests/demo-invoice.test.ts`, `tests/invoice-ingestion.test.ts` | Try sample image, CSV/XLSX and manual purchase |
 | Product identity | `tests/procurement.test.ts` | Try exact, high-confidence, ambiguous and incompatible prompts |
 | Supplier and basket optimization | `tests/procurement.test.ts` | Smart Buy → Optimize 3-item basket |
+| Counterfactual plan resilience | `tests/resilience.test.ts`, `npm run smoke` | Smart Buy → Compare → Stress-test this plan |
 | Atomic inventory and replan | `tests/inventory.test.ts`, `tests/procurement-reservation.test.ts` | Smart Buy → Inventory race |
 | Offer binding | `tests/offers.test.ts` | Run full demo and inspect Audit |
 | Payment signatures | `tests/payment-signatures.test.ts` | Demo payment locally; private live Test Mode remains separate |

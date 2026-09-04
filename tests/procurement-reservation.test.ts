@@ -5,6 +5,7 @@ import { DEMO } from "@/lib/config";
 
 describe("supplier reservation safety",()=>{
   beforeEach(()=>{
+    db.prepare(`DELETE FROM procurement_receipts`).run();
     db.prepare(`DELETE FROM procurement_orders`).run();
     db.prepare(`DELETE FROM supplier_reservations`).run();
     db.prepare(`DELETE FROM procurement_run_options`).run();

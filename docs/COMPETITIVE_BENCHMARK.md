@@ -1,19 +1,27 @@
 # Competitive benchmark
 
-RazorProcure was benchmarked against official product material from established procure-to-pay, restaurant procurement and retail planning platforms. The goal is not to claim feature-for-feature parity with enterprise suites; it is to combine their strongest workflow patterns into a focused, inspectable retailer demo.
+RazorProcure was benchmarked in September 2026 against official product material from five representative category leaders. This is a product-capability benchmark, not an unsupported ranking or a claim of feature-for-feature enterprise parity.
 
-| Product pattern | Official examples | What RazorProcure implements |
+| Benchmark | Standout implementation | Separate RazorProcure capability |
 |---|---|---|
-| Guided intake, approvals and purchase orders | [Procurify](https://www.procurify.com/platform/features/), [Zip](https://ziphq.com/), [Ramp Procurement](https://support.ramp.com/hc/en-us/articles/49355243914387-Ramp-Procurement-Quick-Start-Guide) | Natural-language Smart Buy, explainable supplier plan, configurable autonomous-spend gate and server-bound order authorization |
-| Invoice matching and AP controls | [Order.co](https://www.order.co/accounts-payable-software/), [Precoro](https://precoro.com/product-tour) | Deterministic PO/receipt/invoice reconciliation, automatic exception hold and quantified protected value |
-| Restaurant and multi-location purchasing | [BlueCart](https://www.bluecart.com/restaurant-procurement-software), [MarketMan](https://www.marketman.com/), [Supy](https://supy.io/platform/restaurant-procurement-software) | Connected supplier catalog, landed-cost comparison, case-level stock, basket allocation, receiving variance alerts and purchase memory |
-| Retail forecasting and replenishment | [RELEX](https://www.relexsolutions.com/) | Repeat-purchase memory, reorder opportunity ranking and deterministic paired replay for the demo dataset |
+| [Zip](https://ziphq.com/products/risk-orchestration) | Unified intake plus cross-functional supplier-risk orchestration | **ShadowFunnel:** one deterministic view of policy, evidence, stock and payment authority |
+| [Ramp Procurement](https://docs.ramp.com/developer-api/v1/procurement) | Program-based intake, approvals and PO creation with an integration surface | **Policy-bound execution:** configurable autonomous limit, server-created order and agent-safe API |
+| [Procurify](https://www.procurify.com/procure-to-pay/procurement/ai/) | Plain-language intake, policy guidance and automated three-way matching | **Smart Buy + Delivery Shield:** natural-language request, transparent economics and signed receiving authority |
+| [Order.co](https://www.order.co/ai/) | Catalog learning, supplier sourcing, order tracking and line-level reconciliation | **Connected sourcing:** supplier comparison, full-basket allocation, purchase memory and discrepancy value |
+| [RELEX](https://www.relexsolutions.com/relex-forecasting-and-replenishment-rfp/) | Retail demand forecasting, replenishment scenarios and exception-based planning | **Purchase memory + replay:** reorder opportunities, paired outcomes and deterministic scenario analysis |
+
+## Novel compound layer: Procurement Twin
+
+The benchmarked products demonstrate these controls at different points in the lifecycle. RazorProcure now compounds them before payment: the selected plan is stress-tested against a 7% price shock, supplier outage, two-day delivery slip and doubled demand. The engine computes a resilience score, separates autonomous outcomes from approval-required and blocked outcomes, quantifies avoidable downside and pre-clears the most useful fallback supplier without mutating the live order.
+
+This is intentionally deterministic. The model can explain the result, but the scenario costs, hard gates, authority envelope and fallback ranking are all server-owned and unit-tested.
 
 ## Focused differentiators
 
 - **Explainable economics:** every option exposes unit price, GST, delivery fee, gross payable and savings instead of returning a black-box rank.
 - **Hard authority boundary:** language models may interpret requests and invoices, but only server-owned arithmetic, policy, current evidence and inventory can authorize a purchase.
 - **Exception value, not just exception status:** receiving computes the fair value of what arrived and displays the spend held back from a mismatched invoice.
+- **Counterfactual before commitment:** Procurement Twin proves how the plan behaves under four disruptions before the merchant pays.
 - **Reproducible failure proof:** the inventory race and paired replay let a reviewer reproduce both safety and commercial outcomes.
 - **Account-free public demo:** dummy payments exercise the complete state machine without connecting a real Razorpay account or loading provider Checkout.
 
