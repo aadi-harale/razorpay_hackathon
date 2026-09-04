@@ -1,0 +1,13 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "functions": {
+    "app/api/procurement/invoice/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/evidence/upload/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}

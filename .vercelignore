@@ -1,0 +1,7 @@
+.env.local
+.run
+.data
+.next
+node_modules
+*.log
+*.zip

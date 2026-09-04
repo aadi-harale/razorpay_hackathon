@@ -1,0 +1,44 @@
+{
+  "name": "razorprocure-agentic-procurement",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "bootstrap": "node scripts/bootstrap.mjs",
+    "check": "npm run verify",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "verify": "npm run secret-scan && npm run typecheck && npm run lint && npm run test && npm run build && npm audit --audit-level=high",
+    "secret-scan": "node scripts/secret-scan.mjs",
+    "auth:sync": "node scripts/ensure-local-auth.mjs",
+    "auth:reset": "node scripts/ensure-local-auth.mjs --rotate-password --unlock"
+  },
+  "dependencies": {
+    "better-sqlite3": "13.0.3",
+    "decimal.js": "10.6.0",
+    "lucide-react": "1.40.0",
+    "next": "16.3.4",
+    "razorpay": "2.9.8",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "9.6.0",
+    "@types/node": "26.4.1",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.4"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
